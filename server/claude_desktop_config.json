@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "holiday-group": {
+      "command": "node",
+      "args": ["/FULL/PATH/TO/holiday-group/server/mcp-server.js"]
+    }
+  }
+}

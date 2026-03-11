@@ -1,0 +1,13 @@
+{
+  "name": "holiday-group-mcp-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MCP server for Holiday Group vacation cost calculator",
+  "main": "mcp-server.js",
+  "scripts": {
+    "start": "node mcp-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}

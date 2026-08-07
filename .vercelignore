@@ -1,0 +1,7 @@
+# Never upload local credentials or agent metadata.
+.env
+.env.*
+!.env.example
+.agents
+.codex
+

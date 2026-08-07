@@ -1,90 +1,104 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useLayoutEffect, useState } from "react";
 import {
-  LuUsers,
-  LuCreditCard,
-  LuScale,
-  LuMap,
-  LuArrowLeft,
-  LuCopy,
-  LuCheck,
-  LuLogOut,
-  LuSmartphone,
+  LuReceiptText,
+  LuScanLine,
+  LuUtensils,
+  LuCalendarDays,
+  LuMessageCircle,
 } from "react-icons/lu";
 import { AppProvider } from "../context/AppContext";
+import { useLanguage } from "../context/LanguageContext";
+import LanguageSelect from "../components/LanguageSelect";
 
-export default function AppLayout({ driver, roomCode, sessionName, backTo = "/" }) {
+const navItems = [
+  { to: "people", labelKey: "overview", desktop: true },
+  { to: "expenses", labelKey: "expenses", icon: LuReceiptText, mobile: true },
+  { to: "scan", labelKey: "scan_receipt", mobileKey: "scan", icon: LuScanLine, mobile: true },
+  { to: "restaurant", labelKey: "restaurant_split", mobileKey: "split", icon: LuUtensils, mobile: true },
+  { to: "settle", labelKey: "settle_up", desktop: true },
+  { to: "plan", labelKey: "trip_logistics", mobileKey: "plan", icon: LuCalendarDays, mobile: true },
+  { to: "chat", labelKey: "group_chat", mobileKey: "chat", icon: LuMessageCircle, mobile: true },
+];
+
+export default function AppLayout({ driver, currentMemberId, roomCode, sessionName, backTo = "/", guest = false, ownerMode = false }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(roomCode).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname]);
+
+  const copyCode = async () => {
+    if (!roomCode) return;
+    try {
+      await navigator.clipboard.writeText(roomCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
-    <AppProvider driver={driver}>
+    <AppProvider driver={driver} currentMemberId={currentMemberId} ownerMode={ownerMode}>
       <div className="app-shell">
-
-        <header className="top-header">
-          <button className="back-btn" onClick={() => navigate(backTo)}>
-            <LuArrowLeft size={16} />
-            Back
-          </button>
-          <div className="header-center">
-            <div className="header-badge">Plan Together</div>
-            <h1 className="header-title">Holiday Group</h1>
+        <aside className="app-sidebar">
+          <button className="brand-button" onClick={() => navigate("people")}>Holiday Group</button>
+          <div className="trip-switcher">
+            <span>{t("current_trip")}</span>
+            <strong>{sessionName || t("untitled_trip")}</strong>
           </div>
-        </header>
 
-        {roomCode && (
-          <div className="app-banner app-banner-room">
-            <span className="banner-label">Room code</span>
-            <span className="room-code">{roomCode}</span>
-            <button className="banner-action-btn" onClick={copyCode}>
-              {copied ? <LuCheck size={13} /> : <LuCopy size={13} />}
-              {copied ? "Copied!" : "Copy"}
-            </button>
-            <button className="banner-action-btn" onClick={() => navigate(backTo)}>
-              <LuLogOut size={13} />
-              Leave
-            </button>
-          </div>
-        )}
+          <nav className="side-nav" aria-label="Trip navigation">
+            {navItems.map(({ to, labelKey }) => (
+              <NavLink key={to} to={to} className={({ isActive }) => `side-nav-link${isActive ? " active" : ""}`}>
+                <span>{t(labelKey)}</span>
+              </NavLink>
+            ))}
+          </nav>
 
-        {sessionName && (
-          <div className="app-banner app-banner-session">
-            <LuSmartphone size={14} />
-            <span className="banner-label">Offline</span>
-            <span className="session-banner-name">{sessionName}</span>
+          <div className="sidebar-status">
+            <LanguageSelect />
+            {roomCode ? (
+              <>
+                <span>{guest ? t("guest_room") : t("shared_room")} · {roomCode}</span>
+                <button onClick={copyCode}>{copied ? t("invite_copied") : t("copy_invite")}</button>
+              </>
+            ) : (
+              <>
+                <span>{t("saved_device")}</span>
+                <button onClick={() => navigate(backTo)}>{t("all_trips")}</button>
+              </>
+            )}
+            <button className="quiet-link" onClick={() => navigate(backTo)}>{t("leave_trip")}</button>
           </div>
-        )}
+        </aside>
+
+        <div className="mobile-app-header">
+          <button className="mobile-brand" onClick={() => navigate("people")}>Holiday Group</button>
+          <button className="mobile-trip" onClick={() => navigate("people")}>{sessionName || t("untitled_trip")}</button>
+          <LanguageSelect compact />
+        </div>
 
         <main className="page-content">
           <Outlet />
         </main>
 
-        <nav className="bottom-nav">
-          <NavLink to="people" className={({ isActive }) => `nav-tab${isActive ? " active" : ""}`}>
-            <LuUsers size={22} />
-            <span className="nav-label">People</span>
-          </NavLink>
-          <NavLink to="expenses" className={({ isActive }) => `nav-tab${isActive ? " active" : ""}`}>
-            <LuCreditCard size={22} />
-            <span className="nav-label">Expenses</span>
-          </NavLink>
-          <NavLink to="settle" className={({ isActive }) => `nav-tab${isActive ? " active" : ""}`}>
-            <LuScale size={22} />
-            <span className="nav-label">Settle Up</span>
-          </NavLink>
-          <NavLink to="plan" className={({ isActive }) => `nav-tab${isActive ? " active" : ""}`}>
-            <LuMap size={22} />
-            <span className="nav-label">Plan</span>
-          </NavLink>
+        <nav className="bottom-nav" aria-label="Primary navigation">
+          {navItems.filter((item) => item.mobile).map(({ to, labelKey, mobileKey, icon: Icon }) => (
+            <NavLink key={to} to={to} className={({ isActive }) => `nav-tab${isActive ? " active" : ""}`}>
+              <Icon aria-hidden="true" />
+              <span>{t(mobileKey || labelKey)}</span>
+            </NavLink>
+          ))}
         </nav>
-
       </div>
     </AppProvider>
   );

@@ -1,100 +1,138 @@
-import { useState } from "react";
-import { LuUsers, LuX, LuUserPlus } from "react-icons/lu";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import PageHeader from "../components/PageHeader";
+import CurrencySelect from "../components/CurrencySelect";
+import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
-import { convert, fmt, personColor } from "../utils";
+import { CURRENCY_META, EUR_RATES, RATE_DATE } from "../constants";
+import { calculateBalances, convert, fmt } from "../utils";
+import { createId, nextPersonColor } from "../storage/tripState";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function PeoplePage() {
-  const { people, setPeople, expenses } = useApp();
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const { people, setPeople, expenses, settlementPayments, currentMemberId, canManageMembers } = useApp();
   const [name, setName] = useState("");
+  const [displayCurrency, setDisplayCurrency] = useState("EUR");
+  const balances = useMemo(() => calculateBalances(people, expenses, settlementPayments), [people, expenses, settlementPayments]);
+  const totalSpent = useMemo(
+    () => expenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
+    [expenses, displayCurrency]
+  );
+  const personHasRecords = (id) => expenses.some((expense) =>
+    String(expense.paidById) === String(id) ||
+    (expense.participantIds || []).some((personId) => String(personId) === String(id)) ||
+    Object.keys(expense.shares || {}).includes(String(id))
+  ) || settlementPayments.some((payment) =>
+    [payment.fromId, payment.toId, payment.viaId].some((personId) => String(personId) === String(id))
+  );
 
   const addPerson = () => {
     const trimmed = name.trim();
-    if (!trimmed) return;
-    if (people.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) return;
-    setPeople((prev) => [...prev, { id: Date.now(), name: trimmed }]);
+    if (!trimmed || people.some((person) => person.name.toLowerCase() === trimmed.toLowerCase())) return;
+    const personId = createId("person");
+    setPeople((current) => [...current, {
+      id: personId,
+      name: trimmed,
+      role: current.length ? "member" : "admin",
+      color: nextPersonColor(current, personId),
+      addedAt: new Date().toISOString(),
+      claimedAt: null,
+    }]);
     setName("");
   };
 
-  const removePerson = (id) => setPeople((prev) => prev.filter((p) => p.id !== id));
-
-  function getBalance(personId) {
-    let balance = 0;
-    expenses.forEach((exp) => {
-      const amountEUR = convert(exp.amount, exp.currency, "EUR");
-      if (String(exp.paidById) === String(personId)) balance += amountEUR;
-      if (exp.participantIds.map(String).includes(String(personId)))
-        balance -= amountEUR / exp.participantIds.length;
+  const removePerson = (id) => {
+    if (!canManageMembers) return;
+    const involved = personHasRecords(id);
+    if (involved) return;
+    setPeople((current) => {
+      const target = current.find((person) => String(person.id) === String(id));
+      const adminCount = current.filter((person) => person.role === "admin").length;
+      if (target?.role === "admin" && adminCount <= 1) return current;
+      return current.filter((person) => String(person.id) !== String(id));
     });
-    return balance;
-  }
+  };
+
+  const toggleAdmin = (id) => {
+    if (!canManageMembers) return;
+    setPeople((current) => {
+      const target = current.find((person) => String(person.id) === String(id));
+      const adminCount = current.filter((person) => person.role === "admin").length;
+      if (target?.role === "admin" && adminCount <= 1) return current;
+      return current.map((person) => String(person.id) === String(id)
+        ? { ...person, role: person.role === "admin" ? "member" : "admin" }
+        : person);
+    });
+  };
 
   return (
-    <div>
-      <div className="card">
-        <div className="section-header">
-          <div className="section-icon" style={{ background: "linear-gradient(135deg, #4D96FF, #80B4FF)" }}>
-            <LuUsers size={20} color="white" />
-          </div>
-          <div>
-            <div className="section-title">People</div>
-            <div className="section-subtitle">Add everyone joining the trip</div>
-          </div>
-        </div>
-        <div className="input-row">
-          <input
-            placeholder="Enter a name..."
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addPerson()}
-          />
-          <button className="btn btn-primary" onClick={addPerson}>
-            <LuUserPlus size={15} /> Add
-          </button>
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title={t("trip_overview")}
+        description={t("overview_desc")}
+        actions={<><button className="button secondary" onClick={() => navigate("../settle")}>{t("settle_up")}</button><button className="button primary" onClick={() => navigate("../expenses")}>{t("add_expense")}</button></>}
+      />
 
-      {people.length > 0 && (
-        <div className="card">
-          <div className="people-list">
-            {people.map((p, i) => {
-              const balance = getBalance(p.id);
-              const hasExpenses = expenses.length > 0;
-              const balClass =
-                balance > 0.01 ? "balance-positive"
-                : balance < -0.01 ? "balance-negative"
-                : "balance-neutral";
-              const balLabel =
-                balance > 0.01 ? `gets back ${fmt(balance, "EUR")}`
-                : balance < -0.01 ? `owes ${fmt(Math.abs(balance), "EUR")}`
-                : "settled";
-              return (
-                <div className="person-card" key={p.id}>
-                  <div
-                    className="person-avatar"
-                    style={{ background: personColor(i), width: 40, height: 40, fontSize: 16 }}
-                  >
-                    {p.name[0].toUpperCase()}
+      <section className="summary-band" aria-label="Trip summary">
+        <div><strong>{fmt(totalSpent, displayCurrency)}</strong><span>{t("total_spent")}</span></div>
+        <div><strong>{people.length ? fmt(totalSpent / people.length, displayCurrency) : fmt(0, displayCurrency)}</strong><span>{t("per_person")}</span></div>
+        <div><strong>{people.length}</strong><span>{t("people")}</span></div>
+        <div className="rate-status"><span>{t("rates_updated")}</span><strong>{RATE_DATE}</strong></div>
+      </section>
+
+      <div className="overview-grid">
+        <section className="surface-panel people-panel">
+          <div className="panel-heading">
+            <div><h2>{t("people")}</h2><p>{t("add_everyone")}</p></div>
+          </div>
+          <div className="inline-control add-person-control">
+            <input value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addPerson()} placeholder={t("name")} aria-label={t("name")} />
+            <button className="button secondary" onClick={addPerson}>{t("add_person")}</button>
+          </div>
+
+          {people.length ? (
+            <div className="people-ledger">
+              {people.map((person, index) => {
+                const balance = convert(balances[String(person.id)] || 0, "EUR", displayCurrency);
+                return (
+                  <div className="people-ledger-row" key={person.id}>
+                    <PersonAvatar person={person} people={people} index={index} />
+                    <span className="person-name-cell"><strong>{person.name}</strong><small>{person.role === "admin" ? t("admin") : t("member")}{String(person.id) === String(currentMemberId) ? ` · ${t("you")}` : ""}</small></span>
+                    <span className={balance > 0.01 ? "money-positive" : balance < -0.01 ? "money-negative" : "money-muted"}>
+                      {balance > 0.01 ? `${t("gets")} ${fmt(balance, displayCurrency)}` : balance < -0.01 ? `${t("owes")} ${fmt(Math.abs(balance), displayCurrency)}` : t("settled")}
+                    </span>
+                    <span className="people-row-actions">
+                      {canManageMembers && <button className="row-action" onClick={() => toggleAdmin(person.id)}>{person.role === "admin" ? t("remove_admin") : t("make_admin")}</button>}
+                      {canManageMembers && <button className="row-action" disabled={personHasRecords(person.id)} onClick={() => removePerson(person.id)}>{t("remove")}</button>}
+                    </span>
                   </div>
-                  <span className="person-name">{p.name}</span>
-                  {hasExpenses && (
-                    <span className={`person-balance ${balClass}`}>{balLabel}</span>
-                  )}
-                  <button className="btn btn-danger" onClick={() => removePerson(p.id)}>
-                    <LuX size={15} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-copy"><h3>{t("start_group")}</h3><p>{t("start_group_desc")}</p></div>
+          )}
+          <p className="role-note"><strong>{t("creator_admin_note")}</strong><span>{t("role_help")}</span></p>
+        </section>
 
-      {people.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon"><LuUsers size={44} color="#ddd" /></div>
-          <div>Add your friends to get started!</div>
-        </div>
-      )}
+        <aside className="surface-panel currency-panel">
+          <div className="panel-heading compact-heading">
+            <div><h2>{t("currency_desk")}</h2><p>{t("currency_desc")}</p></div>
+            <CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} />
+          </div>
+          <div className="rate-list">
+            {Object.entries(EUR_RATES).filter(([code]) => code !== "EUR").map(([code, rate]) => (
+              <div className="rate-row" key={code}>
+                <span><strong>{code}</strong>{CURRENCY_META[code].name}</span>
+                <b>{rate.toLocaleString("en-US", { maximumFractionDigits: 4 })}</b>
+              </div>
+            ))}
+          </div>
+          <button className="text-link rates-more" onClick={() => navigate("../expenses")}>{t("use_rates")}</button>
+        </aside>
+      </div>
     </div>
   );
 }

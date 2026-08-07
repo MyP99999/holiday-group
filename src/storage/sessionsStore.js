@@ -1,3 +1,5 @@
+import { createDefaultTripState, normalizeTripState } from "./tripState";
+
 const LIST_KEY = "hg:sessions";
 const DATA_PREFIX = "hg:session:";
 
@@ -21,7 +23,7 @@ export function createSession(name) {
   };
   const sessions = [...getSessions(), session];
   localStorage.setItem(LIST_KEY, JSON.stringify(sessions));
-  localStorage.setItem(DATA_PREFIX + session.id, JSON.stringify({ people: [], expenses: [] }));
+  localStorage.setItem(DATA_PREFIX + session.id, JSON.stringify(createDefaultTripState(session.name)));
   return session;
 }
 
@@ -41,9 +43,9 @@ export function sessionDriver(sessionId) {
   return {
     read() {
       try {
-        return JSON.parse(localStorage.getItem(key)) || { people: [], expenses: [] };
+        return normalizeTripState(JSON.parse(localStorage.getItem(key)), getSession(sessionId)?.name);
       } catch {
-        return { people: [], expenses: [] };
+        return createDefaultTripState(getSession(sessionId)?.name);
       }
     },
     write(state) {

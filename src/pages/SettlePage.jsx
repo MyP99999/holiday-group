@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
 import PersonAvatar from "../components/PersonAvatar";
@@ -9,6 +10,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
 
 export default function SettlePage() {
+  const navigate = useNavigate();
   const { t, locale } = useLanguage();
   const { rateDate } = useCurrencyRates();
   const {
@@ -127,7 +129,7 @@ export default function SettlePage() {
                         <span>{t("then_pay", { via: personName(viaId), to: personName(transaction.to) })} · {amount}</span>
                       </div>
                     ) : !alternatives.length && <small className="route-note">{t("no_route_people")}</small>}
-                    <div className="payment-route-footer"><button className="button secondary small-button" onClick={() => openPaymentConfirmation(transaction, viaId)}>{t("mark_as_paid")}</button></div>
+                    <div className="payment-route-footer"><button className="text-link" onClick={() => navigate(`../people/${viaId || transaction.to}`)}>{t("view_payment_details", { name: personName(viaId || transaction.to) })}</button><button className="button secondary small-button" onClick={() => openPaymentConfirmation(transaction, viaId)}>{t("mark_as_paid")}</button></div>
                   </article>
                 );
               })}</div>

@@ -12,14 +12,17 @@ import AppLayout from "./layouts/AppLayout";
 import LandingPage from "./pages/LandingPage";
 import OfflineSessionsPage from "./pages/OfflineSessionsPage";
 import AuthPage from "./pages/AuthPage";
+import ProfilePage from "./pages/ProfilePage";
 import RoomLobbyPage from "./pages/RoomLobbyPage";
 import GuestLobbyPage from "./pages/GuestLobbyPage";
 import PeoplePage from "./pages/PeoplePage";
+import MemberProfilePage from "./pages/MemberProfilePage";
 import ExpensesPage from "./pages/ExpensesPage";
 import ScanPage from "./pages/ScanPage";
 import RestaurantPage from "./pages/RestaurantPage";
 import SettlePage from "./pages/SettlePage";
 import PlanPage from "./pages/PlanPage";
+import DecisionsPage from "./pages/DecisionsPage";
 import ChatPage from "./pages/ChatPage";
 
 import "./App.css";
@@ -36,13 +39,13 @@ function OfflineLayout() {
   const session = getSession(sessionId);
   const driver = useMemo(() => sessionDriver(sessionId), [sessionId]);
   if (!session) return <Navigate to="/offline" replace />;
-  return <AppLayout key={sessionId} driver={driver} sessionName={session.name} backTo="/offline" ownerMode />;
+  return <AppLayout key={sessionId} driver={driver} sessionName={session.name} notificationKey={`offline:${sessionId}`} backTo="/offline" ownerMode />;
 }
 
 function OnlineRoomLayout() {
   const { roomId } = useParams();
   const driver = useMemo(() => supabaseRoomDriver(roomId), [roomId]);
-  return <AppLayout key={roomId} driver={driver} roomCode={roomId} backTo="/online/lobby" />;
+  return <AppLayout key={roomId} driver={driver} roomCode={roomId} notificationKey={`online:${roomId}`} backTo="/online/lobby" />;
 }
 
 function GuestRoomLayout() {
@@ -50,7 +53,7 @@ function GuestRoomLayout() {
   const driver = useMemo(() => localStorageDriver(roomId), [roomId]);
   if (!driver.exists()) return <Navigate to="/guest" replace />;
   const room = driver.read();
-  return <AppLayout key={roomId} driver={driver} currentMemberId={getRoomIdentity(roomId)} roomCode={roomId} sessionName={room?.tripName} backTo="/guest" guest />;
+  return <AppLayout key={roomId} driver={driver} currentMemberId={getRoomIdentity(roomId)} roomCode={roomId} notificationKey={`guest:${roomId}`} sessionName={room?.tripName} backTo="/guest" guest />;
 }
 
 export default function App() {
@@ -67,11 +70,13 @@ export default function App() {
           <Route path="/offline/:sessionId" element={<OfflineLayout />}>
             <Route index element={<Navigate to="people" replace />} />
             <Route path="people" element={<PeoplePage />} />
+            <Route path="people/:personId" element={<MemberProfilePage />} />
             <Route path="expenses" element={<ExpensesPage />} />
             <Route path="scan" element={<ScanPage />} />
             <Route path="restaurant" element={<RestaurantPage />} />
             <Route path="settle" element={<SettlePage />} />
             <Route path="plan" element={<PlanPage />} />
+            <Route path="decisions" element={<DecisionsPage />} />
             <Route path="chat" element={<ChatPage />} />
           </Route>
 
@@ -80,16 +85,22 @@ export default function App() {
           <Route path="/guest/room/:roomId" element={<GuestRoomLayout />}>
             <Route index element={<Navigate to="people" replace />} />
             <Route path="people" element={<PeoplePage />} />
+            <Route path="people/:personId" element={<MemberProfilePage />} />
             <Route path="expenses" element={<ExpensesPage />} />
             <Route path="scan" element={<ScanPage />} />
             <Route path="restaurant" element={<RestaurantPage />} />
             <Route path="settle" element={<SettlePage />} />
             <Route path="plan" element={<PlanPage />} />
+            <Route path="decisions" element={<DecisionsPage />} />
             <Route path="chat" element={<ChatPage />} />
           </Route>
 
           {/* Online — auth-gated rooms */}
           <Route path="/online" element={<AuthPage />} />
+          <Route
+            path="/profile"
+            element={<RequireAuth><ProfilePage /></RequireAuth>}
+          />
           <Route
             path="/online/lobby"
             element={<RequireAuth><RoomLobbyPage /></RequireAuth>}
@@ -100,11 +111,13 @@ export default function App() {
           >
             <Route index element={<Navigate to="people" replace />} />
             <Route path="people" element={<PeoplePage />} />
+            <Route path="people/:personId" element={<MemberProfilePage />} />
             <Route path="expenses" element={<ExpensesPage />} />
             <Route path="scan" element={<ScanPage />} />
             <Route path="restaurant" element={<RestaurantPage />} />
             <Route path="settle" element={<SettlePage />} />
             <Route path="plan" element={<PlanPage />} />
+            <Route path="decisions" element={<DecisionsPage />} />
             <Route path="chat" element={<ChatPage />} />
           </Route>
 

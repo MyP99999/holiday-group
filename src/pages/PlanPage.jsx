@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
-import ChatPanel from "../components/ChatPanel";
 import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -84,6 +84,7 @@ function CommentThread({ targetType, targetId }) {
 }
 
 export default function PlanPage() {
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const { rateDate } = useCurrencyRates();
   const { people, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights } = useApp();
@@ -98,6 +99,11 @@ export default function PlanPage() {
   const personName = (id) => people.find((person) => String(person.id) === String(id))?.name || t("unassigned");
   const personById = (id) => people.find((person) => String(person.id) === String(id));
   const personIndex = (id) => people.findIndex((person) => String(person.id) === String(id));
+  const startDecision = (category, question, option) => navigate("../decisions", {
+    state: {
+      decisionRequest: { id: createId("decision-request"), category, question, option },
+    },
+  });
 
   const costSummary = useMemo(() => {
     const rows = Object.fromEntries(people.map((person) => [String(person.id), { stays: 0, rentals: 0, flights: 0 }]));
@@ -311,7 +317,7 @@ export default function PlanPage() {
         </section>
       )}
 
-      <div className="logistics-layout">
+      <div className="logistics-layout logistics-layout-full">
         <div className="logistics-board">
           <section className="logistics-section">
             <div className="logistics-section-heading"><div><h2>{t("stays_rooms")}</h2><p>{t("stays_help")}</p></div><strong>{fmt(costSummary.accommodationTotal, outputCurrency)} <span>{t("accommodation_total")}</span></strong></div>
@@ -324,7 +330,7 @@ export default function PlanPage() {
                 <article className="stay-block" key={stay.id}>
                   <header className="stay-heading">
                     <div><h3>{stay.name}</h3><p>{stay.location || "—"} · {stay.nights} {t("nights").toLowerCase()}</p></div>
-                    <div><strong>{fmt(stayTotal, stay.currency)}</strong><button className="row-action" onClick={() => setAccommodations((current) => current.filter((item) => item.id !== stay.id))}>{t("remove")}</button></div>
+                    <div><strong>{fmt(stayTotal, stay.currency)}</strong><button className="decision-link" onClick={() => startDecision("accommodation", t("choose_accommodation_vote"), { title: stay.name, detail: [stay.location, `${stay.nights} ${t("nights").toLowerCase()}`].filter(Boolean).join(" · "), price: stay.price, currency: stay.currency })}>{t("vote_on_this")}</button><button className="row-action" onClick={() => setAccommodations((current) => current.filter((item) => item.id !== stay.id))}>{t("remove")}</button></div>
                   </header>
 
                   <div className="stay-cost-controls">
@@ -400,7 +406,7 @@ export default function PlanPage() {
                   <section className={`rental-panel${vehicle.rentalEnabled ? " active" : ""}`}>
                     <div className="rental-panel-heading">
                       <div><strong>{t("rental_car")}</strong><span>{t("rental_help")}</span></div>
-                      <button className={`rental-toggle${vehicle.rentalEnabled ? " active" : ""}`} onClick={() => toggleRental(vehicle.id)}><span />{vehicle.rentalEnabled ? t("rental_enabled") : t("not_rental")}</button>
+                      <div className="rental-heading-actions">{vehicle.rentalEnabled && <button className="decision-link" onClick={() => startDecision("rental_car", t("choose_rental_vote"), { title: vehicle.name, detail: `${vehicle.seats} ${t("seats").toLowerCase()}`, price: vehicle.rentalPrice, currency: vehicle.rentalCurrency })}>{t("vote_on_this")}</button>}<button className={`rental-toggle${vehicle.rentalEnabled ? " active" : ""}`} onClick={() => toggleRental(vehicle.id)}><span />{vehicle.rentalEnabled ? t("rental_enabled") : t("not_rental")}</button></div>
                     </div>
                     {vehicle.rentalEnabled && (
                       <>
@@ -450,7 +456,7 @@ export default function PlanPage() {
                 <article className="flight-block" key={flight.id}>
                   <header className="flight-heading">
                     <div><span>{flight.flightNumber || flight.airline || t("flight")}</span><h3>{flight.from} <b>â†’</b> {flight.to}</h3><small>{[flight.airline, flight.departureDate].filter(Boolean).join(" Â· ")}</small></div>
-                    <div><strong>{fmt(flight.price, flight.currency)}</strong><button className="row-action" onClick={() => setFlights((current) => current.filter((item) => item.id !== flight.id))}>{t("remove")}</button></div>
+                    <div><strong>{fmt(flight.price, flight.currency)}</strong><button className="decision-link" onClick={() => startDecision("flight", t("choose_flight_vote"), { title: `${flight.from} → ${flight.to}`, detail: [flight.airline, flight.flightNumber, flight.departureDate].filter(Boolean).join(" · "), price: flight.price, currency: flight.currency })}>{t("vote_on_this")}</button><button className="row-action" onClick={() => setFlights((current) => current.filter((item) => item.id !== flight.id))}>{t("remove")}</button></div>
                   </header>
 
                   <div className="flight-details-grid">
@@ -496,7 +502,6 @@ export default function PlanPage() {
           <p className="auto-save-note">{t("logistics_saved")}</p>
         </div>
 
-        <aside className="logistics-chat-rail"><ChatPanel compact /></aside>
       </div>
     </div>
   );

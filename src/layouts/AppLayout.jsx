@@ -1,17 +1,19 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
   LuReceiptText,
   LuScanLine,
   LuUtensils,
   LuCalendarDays,
   LuMessageCircle,
+  LuVote,
 } from "react-icons/lu";
 import { AppProvider } from "../context/AppContext";
 import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
 import LanguageSelect from "../components/LanguageSelect";
 import BrandButton from "../components/BrandButton";
+import { unreadBadge, unreadMessages } from "../utils/chatNotifications";
 
 const navItems = [
   { to: "people", labelKey: "overview", desktop: true },
@@ -20,24 +22,42 @@ const navItems = [
   { to: "restaurant", labelKey: "restaurant_split", mobileKey: "split", icon: LuUtensils, mobile: true },
   { to: "settle", labelKey: "settle_up", desktop: true },
   { to: "plan", labelKey: "trip_logistics", mobileKey: "plan", icon: LuCalendarDays, mobile: true },
-  { to: "chat", labelKey: "group_chat", mobileKey: "chat", icon: LuMessageCircle, mobile: true },
+  { to: "decisions", labelKey: "group_decisions", mobileKey: "decisions", icon: LuVote, mobile: true },
+  { to: "chat", labelKey: "group_chat", mobileKey: "chat", icon: LuMessageCircle },
 ];
 
-export default function AppLayout({ driver, currentMemberId, roomCode, sessionName, backTo = "/", guest = false, ownerMode = false }) {
+export default function AppLayout({ driver, currentMemberId, roomCode, sessionName, notificationKey, backTo = "/", guest = false, ownerMode = false }) {
   return (
     <AppProvider driver={driver} currentMemberId={currentMemberId} ownerMode={ownerMode}>
-      <AppLayoutContent roomCode={roomCode} sessionName={sessionName} backTo={backTo} guest={guest} />
+      <AppLayoutContent roomCode={roomCode} sessionName={sessionName} notificationKey={notificationKey} backTo={backTo} guest={guest} />
     </AppProvider>
   );
 }
 
-function AppLayoutContent({ roomCode, sessionName, backTo, guest }) {
+function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo, guest }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
-  const { tripName, isSyncing, syncError } = useApp();
+  const { tripName, chatMessages, currentMemberId, isSyncing, syncError } = useApp();
   const [copied, setCopied] = useState(false);
   const displayedTripName = tripName || sessionName || t("untitled_trip");
+  const chatReadKey = `hg:chat-read:${notificationKey || roomCode || displayedTripName}:${currentMemberId || "device"}`;
+  const [lastReadMessageId, setLastReadMessageId] = useState(() => localStorage.getItem(chatReadKey) || "");
+  const isChatPage = location.pathname.endsWith("/chat");
+  const unreadCount = isChatPage ? 0 : unreadMessages(chatMessages, lastReadMessageId, currentMemberId).length;
+  const unreadLabel = unreadBadge(unreadCount);
+
+  useEffect(() => {
+    setLastReadMessageId(localStorage.getItem(chatReadKey) || "");
+  }, [chatReadKey]);
+
+  useEffect(() => {
+    if (!isChatPage) return;
+    const latestMessageId = chatMessages[chatMessages.length - 1]?.id;
+    if (!latestMessageId || String(latestMessageId) === String(lastReadMessageId)) return;
+    localStorage.setItem(chatReadKey, String(latestMessageId));
+    setLastReadMessageId(String(latestMessageId));
+  }, [chatMessages, chatReadKey, isChatPage, lastReadMessageId]);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -71,6 +91,7 @@ function AppLayoutContent({ roomCode, sessionName, backTo, guest }) {
             {navItems.map(({ to, labelKey }) => (
               <NavLink key={to} to={to} className={({ isActive }) => `side-nav-link${isActive ? " active" : ""}`}>
                 <span>{t(labelKey)}</span>
+                {to === "chat" && unreadCount > 0 && <span className="side-nav-chat-badge" aria-label={t("unread_messages", { count: unreadLabel })}>{unreadLabel}</span>}
               </NavLink>
             ))}
           </nav>
@@ -112,6 +133,16 @@ function AppLayoutContent({ roomCode, sessionName, backTo, guest }) {
             </NavLink>
           ))}
         </nav>
+
+        <NavLink
+          to="chat"
+          className={`floating-chat-button${isChatPage ? " is-current" : ""}${unreadCount ? " has-unread" : ""}`}
+          aria-label={unreadCount ? t("open_chat_unread", { count: unreadLabel }) : t("open_group_chat")}
+          aria-current={isChatPage ? "page" : undefined}
+        >
+          <LuMessageCircle aria-hidden="true" />
+          {unreadCount > 0 && <span className="floating-chat-badge" aria-hidden="true">{unreadLabel}</span>}
+        </NavLink>
       </div>
   );
 }

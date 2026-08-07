@@ -54,6 +54,7 @@ const realtimeTables = [
   "accommodations",
   "vehicles",
   "flights",
+  "trip_polls",
   "trip_comments",
   "chat_messages",
   "payment_routes",
@@ -79,6 +80,17 @@ export function supabaseRoomDriver(roomCode) {
         .catch(() => undefined)
         .then(() => rpc("save_trip_state", { p_code: code, p_state: state }));
       return writeQueue;
+    },
+
+    writeMemberProfile(memberId, details) {
+      return rpc("update_trip_member_payment_details", {
+        p_code: code,
+        p_member_id: memberId,
+        p_account_holder: details.accountHolder || "",
+        p_iban: details.iban || "",
+        p_payment_methods: details.paymentMethods || [],
+        p_payment_note: details.paymentNote || "",
+      });
     },
 
     subscribe(callback) {

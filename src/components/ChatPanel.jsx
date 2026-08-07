@@ -1,20 +1,14 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
 import { createId } from "../storage/tripState";
 import PersonAvatar from "./PersonAvatar";
 
-export default function ChatPanel({ compact = false }) {
-  const navigate = useNavigate();
+export default function ChatPanel() {
   const { t, locale } = useLanguage();
   const { people, chatMessages, setChatMessages, currentMemberId } = useApp();
   const [senderId, setSenderId] = useState(() => String(currentMemberId || people[0]?.id || ""));
   const [message, setMessage] = useState("");
-  const visibleMessages = useMemo(
-    () => compact ? chatMessages.slice(-4) : chatMessages,
-    [chatMessages, compact]
-  );
 
   const sendMessage = () => {
     const text = message.trim();
@@ -30,14 +24,13 @@ export default function ChatPanel({ compact = false }) {
   };
 
   return (
-    <section className={`chat-panel${compact ? " compact-chat" : ""}`}>
+    <section className="chat-panel">
       <div className="chat-panel-heading">
-        <div><h2>{t("group_chat")}</h2>{!compact && <p>{t("chat_desc")}</p>}</div>
-        {compact && <button className="text-link" onClick={() => navigate("../chat")}>{t("chat")}</button>}
+        <div><h2>{t("group_chat")}</h2><p>{t("chat_desc")}</p></div>
       </div>
 
       <div className="chat-stream" aria-live="polite">
-        {visibleMessages.length ? visibleMessages.map((item) => {
+        {chatMessages.length ? chatMessages.map((item) => {
           const authorIndex = people.findIndex((person) => String(person.id) === String(item.authorId));
           const author = people[authorIndex];
           return (

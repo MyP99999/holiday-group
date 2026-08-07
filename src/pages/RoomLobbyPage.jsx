@@ -122,7 +122,13 @@ export default function RoomLobbyPage() {
     <div className="entry-page">
       <div className="entry-topbar">
         <BrandButton className="wordmark" onClick={() => navigate("/")} />
-        <div className="signed-in-as"><span>{user?.name}</span><button className="text-link" onClick={signOut}>Sign out</button></div>
+        <div className="signed-in-as">
+          <button className="lobby-profile-link" onClick={() => navigate("/profile")}>
+            <span aria-hidden="true">{user?.name?.slice(0, 2).toUpperCase()}</span>
+            <b>{user?.name}</b>
+          </button>
+          <button className="text-link" onClick={signOut}>Sign out</button>
+        </div>
       </div>
 
       <main className="lobby-layout account-lobby-layout">

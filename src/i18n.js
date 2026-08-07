@@ -256,6 +256,188 @@ Object.assign(de, {
   footer_explore: "Entdecken", footer_follow: "Folge uns", footer_soon: "Demnächst", footer_made_for: "Für gemeinsame Abenteuer gemacht.",
 });
 
+Object.assign(en, {
+  group_choice: "Choose together", group_decisions: "Group decisions", group_decisions_desc: "Compare the real options, vote once, and see what the group prefers before anyone books.",
+  open_votes: "Open votes", new_vote: "New vote", voting_as: "Voting as", no_people: "No people", one_vote_help: "Each person gets one vote and can change it until the decision is closed.", add_people_to_vote: "Add at least one person before creating a vote.",
+  vote_category: "Vote category", poll_category_accommodation: "Accommodation", poll_category_rental_car: "Rental car", poll_category_flight: "Flight", poll_category_restaurant: "Restaurant", poll_category_activity: "Activity", poll_category_other: "Anything else",
+  poll_question: "What are we deciding?", poll_question_placeholder: "Which option should we choose?", poll_choices: "Choices", choice: "Choice", choice_title_placeholder: "Option name", details_optional: "Details · optional", choice_detail_placeholder: "Dates, location or useful details", optional_price: "Price · optional", optional_link: "Link · optional", add_choice: "Add another choice", create_vote: "Start voting",
+  poll_open: "Open", poll_closed: "Closed", poll_vote_count: "Votes: {count}", people_voted: "People voted: {count}", leading: "Leading", tied: "Tied", winner: "Winner", view_option: "View", started_by: "Started by {name}", close_vote: "Close", reopen_vote: "Reopen", delete_vote: "Delete", delete_poll_confirm: "Delete this vote and all of its results?", no_votes: "No decisions yet", no_votes_desc: "Start with two options for a stay, rental car, flight, restaurant, activity, or anything else.", vote_on_this: "Vote on this", choose_accommodation_vote: "Which accommodation should we choose?", choose_rental_vote: "Which rental car should we choose?", choose_flight_vote: "Which flight should we choose?",
+});
+
+Object.assign(ro, {
+  group_choice: "Alegeți împreună", group_decisions: "Deciziile grupului", group_decisions_desc: "Comparați opțiunile reale, votați o singură dată și vedeți ce preferă grupul înainte de rezervare.",
+  open_votes: "Voturi deschise", new_vote: "Vot nou", voting_as: "Votează ca", no_people: "Nicio persoană", one_vote_help: "Fiecare persoană are un vot și îl poate schimba până la închiderea deciziei.", add_people_to_vote: "Adaugă cel puțin o persoană înainte de a crea un vot.",
+  vote_category: "Categoria votului", poll_category_accommodation: "Cazare", poll_category_rental_car: "Mașină închiriată", poll_category_flight: "Zbor", poll_category_restaurant: "Restaurant", poll_category_activity: "Activitate", poll_category_other: "Orice altceva",
+  poll_question: "Ce decidem?", poll_question_placeholder: "Ce opțiune alegem?", poll_choices: "Opțiuni", choice: "Opțiune", choice_title_placeholder: "Numele opțiunii", details_optional: "Detalii · opțional", choice_detail_placeholder: "Date, locație sau detalii utile", optional_price: "Preț · opțional", optional_link: "Link · opțional", add_choice: "Adaugă altă opțiune", create_vote: "Începe votul",
+  poll_open: "Deschis", poll_closed: "Închis", poll_vote_count: "Voturi: {count}", people_voted: "Au votat: {count}", leading: "Pe primul loc", tied: "Egalitate", winner: "Câștigător", view_option: "Vezi", started_by: "Creat de {name}", close_vote: "Închide", reopen_vote: "Redeschide", delete_vote: "Șterge", delete_poll_confirm: "Ștergi acest vot și toate rezultatele lui?", no_votes: "Nicio decizie încă", no_votes_desc: "Începe cu două opțiuni pentru cazare, mașină închiriată, zbor, restaurant, activitate sau orice altceva.", vote_on_this: "Votează această opțiune", choose_accommodation_vote: "Ce cazare alegem?", choose_rental_vote: "Ce mașină închiriată alegem?", choose_flight_vote: "Ce zbor alegem?",
+});
+
+Object.assign(es, {
+  group_choice: "Elegid juntos", group_decisions: "Decisiones del grupo", group_decisions_desc: "Comparad las opciones reales, votad una vez y ved qué prefiere el grupo antes de reservar.",
+  open_votes: "Votaciones abiertas", new_vote: "Nueva votación", voting_as: "Votar como", no_people: "Sin personas", one_vote_help: "Cada persona tiene un voto y puede cambiarlo hasta que se cierre la decisión.", add_people_to_vote: "Añade al menos una persona antes de crear una votación.",
+  vote_category: "Categoría", poll_category_accommodation: "Alojamiento", poll_category_rental_car: "Coche de alquiler", poll_category_flight: "Vuelo", poll_category_restaurant: "Restaurante", poll_category_activity: "Actividad", poll_category_other: "Cualquier otra cosa",
+  poll_question: "¿Qué estamos decidiendo?", poll_question_placeholder: "¿Qué opción elegimos?", poll_choices: "Opciones", choice: "Opción", choice_title_placeholder: "Nombre de la opción", details_optional: "Detalles · opcional", choice_detail_placeholder: "Fechas, ubicación o detalles útiles", optional_price: "Precio · opcional", optional_link: "Enlace · opcional", add_choice: "Añadir otra opción", create_vote: "Empezar votación",
+  poll_open: "Abierta", poll_closed: "Cerrada", poll_vote_count: "Votos: {count}", people_voted: "Han votado: {count}", leading: "En cabeza", tied: "Empate", winner: "Ganadora", view_option: "Ver", started_by: "Creada por {name}", close_vote: "Cerrar", reopen_vote: "Reabrir", delete_vote: "Eliminar", delete_poll_confirm: "¿Eliminar esta votación y todos sus resultados?", no_votes: "Aún no hay decisiones", no_votes_desc: "Empieza con dos opciones de alojamiento, coche de alquiler, vuelo, restaurante, actividad o cualquier otra cosa.", vote_on_this: "Votar esta opción", choose_accommodation_vote: "¿Qué alojamiento elegimos?", choose_rental_vote: "¿Qué coche de alquiler elegimos?", choose_flight_vote: "¿Qué vuelo elegimos?",
+});
+
+Object.assign(fr, {
+  group_choice: "Choisissez ensemble", group_decisions: "Décisions du groupe", group_decisions_desc: "Comparez les vraies options, votez une fois et voyez la préférence du groupe avant de réserver.",
+  open_votes: "Votes ouverts", new_vote: "Nouveau vote", voting_as: "Voter en tant que", no_people: "Aucune personne", one_vote_help: "Chaque personne dispose d’un vote et peut le modifier jusqu’à la clôture de la décision.", add_people_to_vote: "Ajoutez au moins une personne avant de créer un vote.",
+  vote_category: "Catégorie du vote", poll_category_accommodation: "Hébergement", poll_category_rental_car: "Voiture de location", poll_category_flight: "Vol", poll_category_restaurant: "Restaurant", poll_category_activity: "Activité", poll_category_other: "Autre chose",
+  poll_question: "Que décidons-nous ?", poll_question_placeholder: "Quelle option choisissons-nous ?", poll_choices: "Choix", choice: "Choix", choice_title_placeholder: "Nom de l’option", details_optional: "Détails · facultatif", choice_detail_placeholder: "Dates, lieu ou détails utiles", optional_price: "Prix · facultatif", optional_link: "Lien · facultatif", add_choice: "Ajouter un choix", create_vote: "Lancer le vote",
+  poll_open: "Ouvert", poll_closed: "Fermé", poll_vote_count: "Votes : {count}", people_voted: "Participants : {count}", leading: "En tête", tied: "Égalité", winner: "Gagnant", view_option: "Voir", started_by: "Créé par {name}", close_vote: "Clore", reopen_vote: "Rouvrir", delete_vote: "Supprimer", delete_poll_confirm: "Supprimer ce vote et tous ses résultats ?", no_votes: "Aucune décision", no_votes_desc: "Commencez avec deux options d’hébergement, voiture de location, vol, restaurant, activité ou toute autre idée.", vote_on_this: "Soumettre au vote", choose_accommodation_vote: "Quel hébergement choisissons-nous ?", choose_rental_vote: "Quelle voiture de location choisissons-nous ?", choose_flight_vote: "Quel vol choisissons-nous ?",
+});
+
+Object.assign(de, {
+  group_choice: "Gemeinsam entscheiden", group_decisions: "Gruppenentscheidungen", group_decisions_desc: "Vergleicht die echten Optionen, stimmt einmal ab und seht vor der Buchung, was die Gruppe bevorzugt.",
+  open_votes: "Offene Abstimmungen", new_vote: "Neue Abstimmung", voting_as: "Abstimmen als", no_people: "Keine Personen", one_vote_help: "Jede Person hat eine Stimme und kann sie bis zum Schließen der Entscheidung ändern.", add_people_to_vote: "Füge mindestens eine Person hinzu, bevor du eine Abstimmung erstellst.",
+  vote_category: "Kategorie", poll_category_accommodation: "Unterkunft", poll_category_rental_car: "Mietwagen", poll_category_flight: "Flug", poll_category_restaurant: "Restaurant", poll_category_activity: "Aktivität", poll_category_other: "Etwas anderes",
+  poll_question: "Was entscheiden wir?", poll_question_placeholder: "Welche Option wählen wir?", poll_choices: "Optionen", choice: "Option", choice_title_placeholder: "Name der Option", details_optional: "Details · optional", choice_detail_placeholder: "Daten, Ort oder nützliche Details", optional_price: "Preis · optional", optional_link: "Link · optional", add_choice: "Weitere Option", create_vote: "Abstimmung starten",
+  poll_open: "Offen", poll_closed: "Geschlossen", poll_vote_count: "Stimmen: {count}", people_voted: "Abgestimmt: {count}", leading: "Führt", tied: "Gleichstand", winner: "Gewinner", view_option: "Ansehen", started_by: "Erstellt von {name}", close_vote: "Schließen", reopen_vote: "Wieder öffnen", delete_vote: "Löschen", delete_poll_confirm: "Diese Abstimmung und alle Ergebnisse löschen?", no_votes: "Noch keine Entscheidung", no_votes_desc: "Starte mit zwei Optionen für Unterkunft, Mietwagen, Flug, Restaurant, Aktivität oder etwas anderes.", vote_on_this: "Darüber abstimmen", choose_accommodation_vote: "Welche Unterkunft wählen wir?", choose_rental_vote: "Welchen Mietwagen wählen wir?", choose_flight_vote: "Welchen Flug wählen wir?",
+});
+
+Object.assign(en, {
+  checking_session: "Checking your session…", my_trips: "My trips", profile: "Profile", sign_out: "Sign out",
+  your_profile: "Your profile.", profile_desc: "Keep your account details current and control how you sign in to HolidaySplits.", signed_in_as: "Signed in as",
+  personal_details: "Personal details", personal_details_desc: "This is the name your travel groups will see.", display_name: "Display name", email_address: "Email address", save_profile: "Save profile", profile_saved: "Your profile was updated.", saving: "Saving…",
+  password_security: "Password & security", password_security_desc: "Use your current password to choose a new one, or request a secure link by email.", current_password: "Current password", new_password: "New password", confirm_new_password: "Confirm new password", change_password: "Change password", set_new_password: "Set new password", password_updated: "Your password was updated.", password_mismatch: "The new passwords do not match.", password_minimum: "Use at least 8 characters.", email_reset_link: "Email me a reset link", reset_link_sent: "We sent a password reset link to your email.", sending: "Sending…", updating: "Updating…",
+  recovery_title: "Choose a new password", recovery_desc: "Your reset link is verified. Set a new password to finish recovering your account.",
+  danger_zone: "Danger zone", delete_account: "Delete account", delete_account_desc: "Permanently remove your login and private profile. Trips are handed to another admin when possible, while shared expense history stays intact.", delete_account_confirm_title: "Delete your account?", delete_account_confirm_desc: "This is permanent. Your existing shared trip entries remain so group balances stay correct. Confirm with your current password.", confirm_with_password: "Current password", enter_password_to_delete: "Enter your password", delete_forever: "Delete forever", deleting: "Deleting…",
+  online_mode: "Online mode", register: "Register", continue_google: "Continue with Google", or: "or", your_name: "Your name", password: "Password", forgot_password: "Forgot password?", forgot_password_desc: "Enter your account email and we’ll send a secure link to choose a new password.", password_placeholder: "Min. 6 characters", please_wait: "Please wait…", send_reset_link: "Send reset link", create_account: "Create account", back_to_sign_in: "Back to sign in", reset_link_sent_generic: "If an account exists for this email, a reset link is on its way.", confirm_email_message: "Check your inbox to confirm your email, then sign in.", account_sync_note: "Secure account mode keeps your shared rooms available across devices.",
+});
+
+Object.assign(ro, {
+  checking_session: "Verificăm sesiunea…", my_trips: "Călătoriile mele", profile: "Profil", sign_out: "Deconectare",
+  your_profile: "Profilul tău.", profile_desc: "Actualizează datele contului și controlează modul în care te conectezi la HolidaySplits.", signed_in_as: "Conectat ca",
+  personal_details: "Date personale", personal_details_desc: "Acesta este numele pe care îl vor vedea grupurile tale.", display_name: "Nume afișat", email_address: "Adresă de email", save_profile: "Salvează profilul", profile_saved: "Profilul a fost actualizat.", saving: "Se salvează…",
+  password_security: "Parolă și securitate", password_security_desc: "Folosește parola actuală pentru a alege una nouă sau cere un link securizat prin email.", current_password: "Parola actuală", new_password: "Parolă nouă", confirm_new_password: "Confirmă parola nouă", change_password: "Schimbă parola", set_new_password: "Setează parola nouă", password_updated: "Parola a fost actualizată.", password_mismatch: "Parolele noi nu coincid.", password_minimum: "Folosește cel puțin 8 caractere.", email_reset_link: "Trimite-mi un link de resetare", reset_link_sent: "Am trimis linkul de resetare pe email.", sending: "Se trimite…", updating: "Se actualizează…",
+  recovery_title: "Alege o parolă nouă", recovery_desc: "Linkul de resetare este verificat. Setează o parolă nouă pentru a recupera contul.",
+  danger_zone: "Zonă periculoasă", delete_account: "Șterge contul", delete_account_desc: "Șterge definitiv autentificarea și profilul privat. Călătoriile sunt preluate de alt administrator când este posibil, iar istoricul cheltuielilor rămâne corect.", delete_account_confirm_title: "Ștergi contul?", delete_account_confirm_desc: "Acțiunea este permanentă. Intrările existente din călătoriile comune rămân pentru a păstra soldurile corecte. Confirmă cu parola actuală.", confirm_with_password: "Parola actuală", enter_password_to_delete: "Introdu parola", delete_forever: "Șterge definitiv", deleting: "Se șterge…",
+  online_mode: "Mod online", register: "Înregistrare", continue_google: "Continuă cu Google", or: "sau", your_name: "Numele tău", password: "Parolă", forgot_password: "Ai uitat parola?", forgot_password_desc: "Introdu emailul contului și îți vom trimite un link securizat pentru o parolă nouă.", password_placeholder: "Min. 6 caractere", please_wait: "Te rugăm să aștepți…", send_reset_link: "Trimite linkul", create_account: "Creează cont", back_to_sign_in: "Înapoi la conectare", reset_link_sent_generic: "Dacă există un cont pentru acest email, linkul de resetare este pe drum.", confirm_email_message: "Verifică emailul pentru confirmare, apoi conectează-te.", account_sync_note: "Modul cu cont păstrează camerele comune disponibile pe toate dispozitivele.",
+});
+
+Object.assign(es, {
+  checking_session: "Comprobando tu sesión…", my_trips: "Mis viajes", profile: "Perfil", sign_out: "Cerrar sesión",
+  your_profile: "Tu perfil.", profile_desc: "Mantén tus datos al día y controla cómo accedes a HolidaySplits.", signed_in_as: "Sesión iniciada como",
+  personal_details: "Datos personales", personal_details_desc: "Este es el nombre que verán tus grupos de viaje.", display_name: "Nombre visible", email_address: "Correo electrónico", save_profile: "Guardar perfil", profile_saved: "Tu perfil se ha actualizado.", saving: "Guardando…",
+  password_security: "Contraseña y seguridad", password_security_desc: "Usa tu contraseña actual para elegir una nueva o solicita un enlace seguro por correo.", current_password: "Contraseña actual", new_password: "Nueva contraseña", confirm_new_password: "Confirmar nueva contraseña", change_password: "Cambiar contraseña", set_new_password: "Establecer nueva contraseña", password_updated: "Tu contraseña se ha actualizado.", password_mismatch: "Las nuevas contraseñas no coinciden.", password_minimum: "Usa al menos 8 caracteres.", email_reset_link: "Enviarme un enlace", reset_link_sent: "Hemos enviado el enlace de restablecimiento a tu correo.", sending: "Enviando…", updating: "Actualizando…",
+  recovery_title: "Elige una nueva contraseña", recovery_desc: "Tu enlace está verificado. Define una nueva contraseña para recuperar la cuenta.",
+  danger_zone: "Zona de peligro", delete_account: "Eliminar cuenta", delete_account_desc: "Elimina para siempre tu acceso y perfil privado. Los viajes pasan a otro administrador cuando sea posible y el historial de gastos se conserva.", delete_account_confirm_title: "¿Eliminar tu cuenta?", delete_account_confirm_desc: "Esta acción es permanente. Tus entradas en viajes compartidos se conservan para mantener los saldos correctos. Confirma con tu contraseña actual.", confirm_with_password: "Contraseña actual", enter_password_to_delete: "Introduce tu contraseña", delete_forever: "Eliminar para siempre", deleting: "Eliminando…",
+  online_mode: "Modo online", register: "Registrarse", continue_google: "Continuar con Google", or: "o", your_name: "Tu nombre", password: "Contraseña", forgot_password: "¿Has olvidado la contraseña?", forgot_password_desc: "Introduce el correo de tu cuenta y te enviaremos un enlace seguro para elegir una nueva contraseña.", password_placeholder: "Mín. 6 caracteres", please_wait: "Espera un momento…", send_reset_link: "Enviar enlace", create_account: "Crear cuenta", back_to_sign_in: "Volver a iniciar sesión", reset_link_sent_generic: "Si existe una cuenta con este correo, el enlace de restablecimiento está en camino.", confirm_email_message: "Revisa tu correo para confirmar la cuenta y después inicia sesión.", account_sync_note: "El modo con cuenta mantiene tus salas compartidas disponibles en todos tus dispositivos.",
+});
+
+Object.assign(fr, {
+  checking_session: "Vérification de votre session…", my_trips: "Mes voyages", profile: "Profil", sign_out: "Se déconnecter",
+  your_profile: "Votre profil.", profile_desc: "Gardez vos informations à jour et contrôlez votre connexion à HolidaySplits.", signed_in_as: "Connecté en tant que",
+  personal_details: "Informations personnelles", personal_details_desc: "C’est le nom que verront vos groupes de voyage.", display_name: "Nom affiché", email_address: "Adresse e-mail", save_profile: "Enregistrer le profil", profile_saved: "Votre profil a été mis à jour.", saving: "Enregistrement…",
+  password_security: "Mot de passe et sécurité", password_security_desc: "Utilisez votre mot de passe actuel pour en choisir un nouveau ou demandez un lien sécurisé par e-mail.", current_password: "Mot de passe actuel", new_password: "Nouveau mot de passe", confirm_new_password: "Confirmer le nouveau mot de passe", change_password: "Changer le mot de passe", set_new_password: "Définir le mot de passe", password_updated: "Votre mot de passe a été mis à jour.", password_mismatch: "Les nouveaux mots de passe ne correspondent pas.", password_minimum: "Utilisez au moins 8 caractères.", email_reset_link: "M’envoyer un lien", reset_link_sent: "Le lien de réinitialisation a été envoyé par e-mail.", sending: "Envoi…", updating: "Mise à jour…",
+  recovery_title: "Choisissez un nouveau mot de passe", recovery_desc: "Votre lien est vérifié. Définissez un nouveau mot de passe pour récupérer votre compte.",
+  danger_zone: "Zone sensible", delete_account: "Supprimer le compte", delete_account_desc: "Supprimez définitivement votre accès et profil privé. Les voyages sont confiés à un autre administrateur si possible et l’historique des dépenses est conservé.", delete_account_confirm_title: "Supprimer votre compte ?", delete_account_confirm_desc: "Cette action est définitive. Vos entrées de voyage restent afin de préserver les soldes du groupe. Confirmez avec votre mot de passe actuel.", confirm_with_password: "Mot de passe actuel", enter_password_to_delete: "Saisissez votre mot de passe", delete_forever: "Supprimer définitivement", deleting: "Suppression…",
+  online_mode: "Mode en ligne", register: "S’inscrire", continue_google: "Continuer avec Google", or: "ou", your_name: "Votre nom", password: "Mot de passe", forgot_password: "Mot de passe oublié ?", forgot_password_desc: "Saisissez l’e-mail de votre compte et nous vous enverrons un lien sécurisé pour choisir un nouveau mot de passe.", password_placeholder: "6 caractères min.", please_wait: "Veuillez patienter…", send_reset_link: "Envoyer le lien", create_account: "Créer un compte", back_to_sign_in: "Retour à la connexion", reset_link_sent_generic: "Si un compte correspond à cet e-mail, le lien de réinitialisation est en route.", confirm_email_message: "Consultez votre e-mail pour confirmer votre compte, puis connectez-vous.", account_sync_note: "Le mode compte garde vos salons partagés disponibles sur tous vos appareils.",
+});
+
+Object.assign(de, {
+  checking_session: "Sitzung wird geprüft…", my_trips: "Meine Reisen", profile: "Profil", sign_out: "Abmelden",
+  your_profile: "Dein Profil.", profile_desc: "Halte deine Kontodaten aktuell und verwalte deine Anmeldung bei HolidaySplits.", signed_in_as: "Angemeldet als",
+  personal_details: "Persönliche Angaben", personal_details_desc: "Diesen Namen sehen deine Reisegruppen.", display_name: "Anzeigename", email_address: "E-Mail-Adresse", save_profile: "Profil speichern", profile_saved: "Dein Profil wurde aktualisiert.", saving: "Speichern…",
+  password_security: "Passwort und Sicherheit", password_security_desc: "Wähle mit deinem aktuellen Passwort ein neues oder fordere einen sicheren Link per E-Mail an.", current_password: "Aktuelles Passwort", new_password: "Neues Passwort", confirm_new_password: "Neues Passwort bestätigen", change_password: "Passwort ändern", set_new_password: "Neues Passwort festlegen", password_updated: "Dein Passwort wurde aktualisiert.", password_mismatch: "Die neuen Passwörter stimmen nicht überein.", password_minimum: "Verwende mindestens 8 Zeichen.", email_reset_link: "Reset-Link senden", reset_link_sent: "Wir haben den Reset-Link per E-Mail gesendet.", sending: "Senden…", updating: "Aktualisieren…",
+  recovery_title: "Wähle ein neues Passwort", recovery_desc: "Dein Reset-Link wurde bestätigt. Lege ein neues Passwort fest, um dein Konto wiederherzustellen.",
+  danger_zone: "Gefahrenbereich", delete_account: "Konto löschen", delete_account_desc: "Lösche Anmeldung und privates Profil dauerhaft. Reisen werden wenn möglich an einen anderen Admin übergeben; die gemeinsame Ausgabenhistorie bleibt erhalten.", delete_account_confirm_title: "Konto löschen?", delete_account_confirm_desc: "Dieser Vorgang ist endgültig. Deine bestehenden Reiseeinträge bleiben erhalten, damit Gruppensalden korrekt bleiben. Bestätige mit deinem aktuellen Passwort.", confirm_with_password: "Aktuelles Passwort", enter_password_to_delete: "Passwort eingeben", delete_forever: "Endgültig löschen", deleting: "Löschen…",
+  online_mode: "Online-Modus", register: "Registrieren", continue_google: "Mit Google fortfahren", or: "oder", your_name: "Dein Name", password: "Passwort", forgot_password: "Passwort vergessen?", forgot_password_desc: "Gib die E-Mail deines Kontos ein. Wir senden dir einen sicheren Link für ein neues Passwort.", password_placeholder: "Mind. 6 Zeichen", please_wait: "Bitte warten…", send_reset_link: "Reset-Link senden", create_account: "Konto erstellen", back_to_sign_in: "Zurück zur Anmeldung", reset_link_sent_generic: "Falls ein Konto für diese E-Mail existiert, ist der Reset-Link unterwegs.", confirm_email_message: "Bestätige dein Konto über die E-Mail und melde dich danach an.", account_sync_note: "Im Kontomodus bleiben deine gemeinsamen Räume auf allen Geräten verfügbar.",
+});
+
+Object.assign(en, {
+  decisions: "Decisions", open_group_chat: "Open group chat", open_chat_unread: "Open group chat, {count} unread messages", unread_messages: "{count} unread messages",
+});
+Object.assign(ro, {
+  decisions: "Decizii", open_group_chat: "Deschide chatul grupului", open_chat_unread: "Deschide chatul grupului, {count} mesaje necitite", unread_messages: "{count} mesaje necitite",
+});
+Object.assign(es, {
+  decisions: "Decisiones", open_group_chat: "Abrir chat del grupo", open_chat_unread: "Abrir chat del grupo, {count} mensajes sin leer", unread_messages: "{count} mensajes sin leer",
+});
+Object.assign(fr, {
+  decisions: "Décisions", open_group_chat: "Ouvrir la discussion du groupe", open_chat_unread: "Ouvrir la discussion, {count} messages non lus", unread_messages: "{count} messages non lus",
+});
+Object.assign(de, {
+  decisions: "Entscheidungen", open_group_chat: "Gruppenchat öffnen", open_chat_unread: "Gruppenchat öffnen, {count} ungelesene Nachrichten", unread_messages: "{count} ungelesene Nachrichten",
+});
+
+Object.assign(en, {
+  member_profile: "Trip member", member_profile_desc: "Payment details and preferred ways to settle up with this person.", back_to_people: "Back to people",
+  view_member_profile: "View {name}'s profile", member_not_found: "Member not found", member_not_found_desc: "This person may no longer be part of the trip.",
+  payment_details: "Payment details", payment_details_desc: "Keep the information your group needs when it is time to settle up.", trip_members_only: "Trip members only",
+  payment_details_ready: "Ready to receive payments from the group.", payment_details_missing: "No payment details have been added yet.", edit_payment_details: "Edit details",
+  account_holder: "Account holder", iban: "IBAN", payment_methods: "Payment methods", payment_methods_help: "Add any usernames, emails, phone numbers or payment links you accept.",
+  payment_method: "Payment method", payment_handle: "Payment username or link", add_payment_method: "Add payment method", payment_handle_placeholder: "Username, email, phone or payment link",
+  no_payment_methods_added: "No additional payment methods yet.", payment_note: "Payment note", payment_note_placeholder: "For example: include your name and the trip in the transfer reference.",
+  save_payment_details: "Save payment details", payment_details_saved: "Payment details saved.", no_payment_details: "Nothing to pay with yet",
+  add_your_payment_details: "Add an IBAN or another payment method so the group knows how to pay you.", no_payment_details_desc: "This person has not shared any payment information yet.",
+  add_payment_details: "Add payment details", only_member_can_edit: "Only this member can edit their claimed profile. Everyone in the trip can view these details.",
+  view_payment_details: "Pay {name}", copy: "Copy", copied: "Copied",
+  payment_method_revolut: "Revolut", payment_method_paypal: "PayPal", payment_method_wise: "Wise", payment_method_venmo: "Venmo", payment_method_cashapp: "Cash App",
+  payment_method_bizum: "Bizum", payment_method_bank_transfer: "Bank transfer", payment_method_cash: "Cash", payment_method_other: "Other",
+});
+Object.assign(ro, {
+  member_profile: "Membru al excursiei", member_profile_desc: "Detalii de plată și metodele preferate pentru decontarea cu această persoană.", back_to_people: "Înapoi la persoane",
+  view_member_profile: "Vezi profilul lui {name}", member_not_found: "Membrul nu a fost găsit", member_not_found_desc: "Este posibil ca această persoană să nu mai facă parte din excursie.",
+  payment_details: "Detalii de plată", payment_details_desc: "Păstrează informațiile de care grupul are nevoie la decontare.", trip_members_only: "Doar membrii excursiei",
+  payment_details_ready: "Poate primi plăți de la grup.", payment_details_missing: "Nu au fost adăugate detalii de plată.", edit_payment_details: "Editează detaliile",
+  account_holder: "Titularul contului", iban: "IBAN", payment_methods: "Metode de plată", payment_methods_help: "Adaugă utilizatorii, emailurile, numerele de telefon sau linkurile de plată acceptate.",
+  payment_method: "Metodă de plată", payment_handle: "Utilizator sau link de plată", add_payment_method: "Adaugă metodă", payment_handle_placeholder: "Utilizator, email, telefon sau link de plată",
+  no_payment_methods_added: "Nu există alte metode de plată.", payment_note: "Notă pentru plată", payment_note_placeholder: "De exemplu: include numele și excursia în detaliile transferului.",
+  save_payment_details: "Salvează detaliile", payment_details_saved: "Detaliile de plată au fost salvate.", no_payment_details: "Încă nu există date de plată",
+  add_your_payment_details: "Adaugă un IBAN sau altă metodă pentru ca grupul să știe cum să te plătească.", no_payment_details_desc: "Această persoană nu a distribuit încă informații de plată.",
+  add_payment_details: "Adaugă detalii", only_member_can_edit: "Doar acest membru își poate edita profilul revendicat. Toți membrii excursiei pot vedea detaliile.",
+  view_payment_details: "Plătește către {name}", copy: "Copiază", copied: "Copiat",
+  payment_method_revolut: "Revolut", payment_method_paypal: "PayPal", payment_method_wise: "Wise", payment_method_venmo: "Venmo", payment_method_cashapp: "Cash App",
+  payment_method_bizum: "Bizum", payment_method_bank_transfer: "Transfer bancar", payment_method_cash: "Numerar", payment_method_other: "Altă metodă",
+});
+Object.assign(es, {
+  member_profile: "Miembro del viaje", member_profile_desc: "Datos de pago y formas preferidas de saldar cuentas con esta persona.", back_to_people: "Volver a personas",
+  view_member_profile: "Ver el perfil de {name}", member_not_found: "Miembro no encontrado", member_not_found_desc: "Puede que esta persona ya no forme parte del viaje.",
+  payment_details: "Datos de pago", payment_details_desc: "Guarda la información que el grupo necesita para saldar cuentas.", trip_members_only: "Solo miembros del viaje",
+  payment_details_ready: "Puede recibir pagos del grupo.", payment_details_missing: "Todavía no ha añadido datos de pago.", edit_payment_details: "Editar datos",
+  account_holder: "Titular de la cuenta", iban: "IBAN", payment_methods: "Métodos de pago", payment_methods_help: "Añade usuarios, correos, teléfonos o enlaces de pago que aceptes.",
+  payment_method: "Método de pago", payment_handle: "Usuario o enlace de pago", add_payment_method: "Añadir método", payment_handle_placeholder: "Usuario, correo, teléfono o enlace de pago",
+  no_payment_methods_added: "No hay otros métodos de pago.", payment_note: "Nota de pago", payment_note_placeholder: "Por ejemplo: incluye tu nombre y el viaje en el concepto.",
+  save_payment_details: "Guardar datos", payment_details_saved: "Datos de pago guardados.", no_payment_details: "Aún no hay datos de pago",
+  add_your_payment_details: "Añade un IBAN u otro método para que el grupo sepa cómo pagarte.", no_payment_details_desc: "Esta persona todavía no ha compartido información de pago.",
+  add_payment_details: "Añadir datos", only_member_can_edit: "Solo este miembro puede editar su perfil reclamado. Todos los miembros del viaje pueden ver los datos.",
+  view_payment_details: "Pagar a {name}", copy: "Copiar", copied: "Copiado",
+  payment_method_revolut: "Revolut", payment_method_paypal: "PayPal", payment_method_wise: "Wise", payment_method_venmo: "Venmo", payment_method_cashapp: "Cash App",
+  payment_method_bizum: "Bizum", payment_method_bank_transfer: "Transferencia bancaria", payment_method_cash: "Efectivo", payment_method_other: "Otro",
+});
+Object.assign(fr, {
+  member_profile: "Membre du voyage", member_profile_desc: "Coordonnées de paiement et moyens préférés pour régler cette personne.", back_to_people: "Retour aux personnes",
+  view_member_profile: "Voir le profil de {name}", member_not_found: "Membre introuvable", member_not_found_desc: "Cette personne ne fait peut-être plus partie du voyage.",
+  payment_details: "Coordonnées de paiement", payment_details_desc: "Conservez les informations nécessaires au groupe pour régler les comptes.", trip_members_only: "Membres du voyage uniquement",
+  payment_details_ready: "Prêt à recevoir les paiements du groupe.", payment_details_missing: "Aucune information de paiement n’a encore été ajoutée.", edit_payment_details: "Modifier",
+  account_holder: "Titulaire du compte", iban: "IBAN", payment_methods: "Moyens de paiement", payment_methods_help: "Ajoutez les identifiants, e-mails, téléphones ou liens de paiement acceptés.",
+  payment_method: "Moyen de paiement", payment_handle: "Identifiant ou lien de paiement", add_payment_method: "Ajouter un moyen", payment_handle_placeholder: "Identifiant, e-mail, téléphone ou lien",
+  no_payment_methods_added: "Aucun autre moyen de paiement.", payment_note: "Note de paiement", payment_note_placeholder: "Par exemple : indiquez votre nom et le voyage dans la référence.",
+  save_payment_details: "Enregistrer", payment_details_saved: "Coordonnées de paiement enregistrées.", no_payment_details: "Aucune donnée de paiement",
+  add_your_payment_details: "Ajoutez un IBAN ou un autre moyen pour que le groupe sache comment vous payer.", no_payment_details_desc: "Cette personne n’a pas encore partagé d’informations de paiement.",
+  add_payment_details: "Ajouter les coordonnées", only_member_can_edit: "Seul ce membre peut modifier son profil revendiqué. Tous les membres du voyage peuvent voir ces données.",
+  view_payment_details: "Payer {name}", copy: "Copier", copied: "Copié",
+  payment_method_revolut: "Revolut", payment_method_paypal: "PayPal", payment_method_wise: "Wise", payment_method_venmo: "Venmo", payment_method_cashapp: "Cash App",
+  payment_method_bizum: "Bizum", payment_method_bank_transfer: "Virement bancaire", payment_method_cash: "Espèces", payment_method_other: "Autre",
+});
+Object.assign(de, {
+  member_profile: "Reisemitglied", member_profile_desc: "Zahlungsdaten und bevorzugte Wege, diese Person zu bezahlen.", back_to_people: "Zurück zu Personen",
+  view_member_profile: "Profil von {name} ansehen", member_not_found: "Mitglied nicht gefunden", member_not_found_desc: "Diese Person ist möglicherweise nicht mehr Teil der Reise.",
+  payment_details: "Zahlungsdaten", payment_details_desc: "Speichere die Informationen, die die Gruppe zum Ausgleichen benötigt.", trip_members_only: "Nur für Reisemitglieder",
+  payment_details_ready: "Kann Zahlungen von der Gruppe empfangen.", payment_details_missing: "Noch keine Zahlungsdaten hinzugefügt.", edit_payment_details: "Daten bearbeiten",
+  account_holder: "Kontoinhaber", iban: "IBAN", payment_methods: "Zahlungsmethoden", payment_methods_help: "Füge akzeptierte Benutzernamen, E-Mails, Telefonnummern oder Zahlungslinks hinzu.",
+  payment_method: "Zahlungsmethode", payment_handle: "Benutzername oder Zahlungslink", add_payment_method: "Methode hinzufügen", payment_handle_placeholder: "Benutzername, E-Mail, Telefon oder Zahlungslink",
+  no_payment_methods_added: "Keine weiteren Zahlungsmethoden.", payment_note: "Zahlungshinweis", payment_note_placeholder: "Zum Beispiel: Name und Reise im Verwendungszweck angeben.",
+  save_payment_details: "Zahlungsdaten speichern", payment_details_saved: "Zahlungsdaten gespeichert.", no_payment_details: "Noch keine Zahlungsdaten",
+  add_your_payment_details: "Füge eine IBAN oder eine andere Methode hinzu, damit die Gruppe dich bezahlen kann.", no_payment_details_desc: "Diese Person hat noch keine Zahlungsinformationen geteilt.",
+  add_payment_details: "Zahlungsdaten hinzufügen", only_member_can_edit: "Nur dieses Mitglied kann sein beanspruchtes Profil bearbeiten. Alle Reisemitglieder können die Daten sehen.",
+  view_payment_details: "{name} bezahlen", copy: "Kopieren", copied: "Kopiert",
+  payment_method_revolut: "Revolut", payment_method_paypal: "PayPal", payment_method_wise: "Wise", payment_method_venmo: "Venmo", payment_method_cashapp: "Cash App",
+  payment_method_bizum: "Bizum", payment_method_bank_transfer: "Banküberweisung", payment_method_cash: "Barzahlung", payment_method_other: "Andere",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import BrandButton from "../components/BrandButton";
 import LanguageSelect from "../components/LanguageSelect";
+import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
 const slides = [
@@ -32,6 +33,7 @@ const slides = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
   const [activeSlide, setActiveSlide] = useState(0);
   const [paused, setPaused] = useState(false);
   const mediaRef = useRef(null);
@@ -95,7 +97,19 @@ export default function LandingPage() {
           <a href="#how-it-works">{t("how_it_works")}</a>
           <a href="#made-for-groups">{t("for_groups")}</a>
           <LanguageSelect compact />
-          <button className="text-link" onClick={() => navigate("/online")}>{t("sign_in")}</button>
+          {authLoading ? (
+            <span className="landing-account-loading" aria-label={t("checking_session")} />
+          ) : user ? (
+            <div className="landing-account-actions">
+              <button className="text-link landing-trips-link" onClick={() => navigate("/online/lobby")}>{t("my_trips")}</button>
+              <button className="landing-profile-button" onClick={() => navigate("/profile")} aria-label={`${t("profile")}: ${user.name}`}>
+                <span aria-hidden="true">{user.name?.slice(0, 2).toUpperCase()}</span>
+                <b>{user.name}</b>
+              </button>
+            </div>
+          ) : (
+            <button className="text-link" onClick={() => navigate("/online")}>{t("sign_in")}</button>
+          )}
         </nav>
       </header>
 
@@ -189,7 +203,9 @@ export default function LandingPage() {
             <strong>{t("footer_explore")}</strong>
             <a href="#how-it-works">{t("how_it_works")}</a>
             <a href="#made-for-groups">{t("for_groups")}</a>
-            <button onClick={() => navigate("/online")}>{t("sign_in")}</button>
+            {!authLoading && (
+              <button onClick={() => navigate(user ? "/profile" : "/online")}>{user ? t("profile") : t("sign_in")}</button>
+            )}
           </div>
           <div className="footer-column footer-socials">
             <strong>{t("footer_follow")}</strong>

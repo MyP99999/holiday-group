@@ -93,6 +93,47 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
   const effectiveMemberId = currentMemberId || state.currentMemberId || "";
   const currentPerson = state.people.find((person) => String(person.id) === String(effectiveMemberId)) || null;
   const canManageMembers = ownerMode || currentPerson?.role === "admin";
+  const canEditMemberProfile = (memberId) => {
+    const target = state.people.find((person) => String(person.id) === String(memberId));
+    return Boolean(
+      target && (
+        ownerMode ||
+        String(memberId) === String(effectiveMemberId) ||
+        (canManageMembers && !target.claimedAt)
+      )
+    );
+  };
+
+  const updateMemberProfile = async (memberId, details) => {
+    if (!canEditMemberProfile(memberId)) return false;
+    const previous = stateRef.current;
+    const next = {
+      ...previous,
+      people: previous.people.map((person) => String(person.id) === String(memberId)
+        ? { ...person, ...details }
+        : person),
+    };
+    stateRef.current = next;
+    setState(next);
+    setSyncError("");
+
+    if (typeof driver.writeMemberProfile === "function") {
+      setPendingWrites((count) => count + 1);
+      try {
+        await driver.writeMemberProfile(memberId, details);
+      } catch (error) {
+        stateRef.current = previous;
+        setState(previous);
+        setSyncError(error.message || "Changes could not be saved.");
+        return false;
+      } finally {
+        setPendingWrites((count) => Math.max(0, count - 1));
+      }
+    } else {
+      persist(next);
+    }
+    return true;
+  };
 
   return (
     <AppContext.Provider value={{
@@ -100,6 +141,8 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
       currentMemberId: effectiveMemberId,
       currentPerson,
       canManageMembers,
+      canEditMemberProfile,
+      updateMemberProfile,
       isSyncing: pendingWrites > 0,
       syncError,
       setPeople: (updater) => setField("people", updater),
@@ -107,6 +150,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
       setAccommodations: (updater) => setField("accommodations", updater),
       setVehicles: (updater) => setField("vehicles", updater),
       setFlights: (updater) => setField("flights", updater),
+      setPolls: (updater) => setField("polls", updater),
       setComments: (updater) => setField("comments", updater),
       setChatMessages: (updater) => setField("chatMessages", updater),
       setPaymentRoutes: (updater) => setField("paymentRoutes", updater),

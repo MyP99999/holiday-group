@@ -100,8 +100,10 @@ export default function PeoplePage() {
                 const balance = convert(balances[String(person.id)] || 0, "EUR", displayCurrency);
                 return (
                   <div className="people-ledger-row" key={person.id}>
-                    <PersonAvatar person={person} people={people} index={index} />
+                    <button className="people-profile-link" onClick={() => navigate(String(person.id))} aria-label={t("view_member_profile", { name: person.name })}>
+                      <PersonAvatar person={person} people={people} index={index} inControl />
                     <span className="person-name-cell"><strong>{person.name}</strong><small>{person.role === "admin" ? t("admin") : t("member")}{String(person.id) === String(currentMemberId) ? ` · ${t("you")}` : ""}</small></span>
+                    </button>
                     <span className={balance > 0.01 ? "money-positive" : balance < -0.01 ? "money-negative" : "money-muted"}>
                       {balance > 0.01 ? `${t("gets")} ${fmt(balance, displayCurrency)}` : balance < -0.01 ? `${t("owes")} ${fmt(Math.abs(balance), displayCurrency)}` : t("settled")}
                     </span>

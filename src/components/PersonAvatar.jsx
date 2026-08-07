@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { personColor } from "../utils";
+import { useLanguage } from "../context/LanguageContext";
 
 function normalizeName(name = "") {
   return name
@@ -46,6 +48,8 @@ export function personMonogram(person, people = []) {
 }
 
 export default function PersonAvatar({ person, people = [], index = 0, size = "default", inControl = false }) {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
   const [longPressVisible, setLongPressVisible] = useState(false);
   const pressTimer = useRef(null);
   const hideTimer = useRef(null);
@@ -76,18 +80,30 @@ export default function PersonAvatar({ person, people = [], index = 0, size = "d
     event.stopPropagation();
     longPressed.current = false;
   };
+  const opensProfile = !inControl && Boolean(person?.id);
+  const openProfile = (event) => {
+    if (!opensProfile || event.defaultPrevented) return;
+    navigate(`../people/${encodeURIComponent(person.id)}`);
+  };
+  const openProfileWithKeyboard = (event) => {
+    if (!opensProfile || !["Enter", " "].includes(event.key)) return;
+    event.preventDefault();
+    navigate(`../people/${encodeURIComponent(person.id)}`);
+  };
 
   return (
     <span
       className={`person-avatar person-avatar-${size}${longPressVisible ? " show-tooltip" : ""}`}
-      role="img"
-      aria-label={person?.name || "Unknown person"}
+      role={opensProfile ? "button" : "img"}
+      aria-label={opensProfile ? t("view_member_profile", { name: person?.name || t("member") }) : person?.name || "Unknown person"}
       tabIndex={inControl ? undefined : 0}
       onPointerDown={startPress}
       onPointerUp={endPress}
       onPointerCancel={endPress}
       onPointerLeave={endPress}
       onClickCapture={suppressLongPressClick}
+      onClick={openProfile}
+      onKeyDown={openProfileWithKeyboard}
       onContextMenu={(event) => event.preventDefault()}
     >
       <span className={`avatar${size === "small" ? " small" : ""}`} style={{ background: personColor(index, person) }}>

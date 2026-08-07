@@ -29,7 +29,7 @@ An account user can claim an unclaimed person that the organizer already added o
 
 Copy `.env.example` to `.env` and set the project URL and public anon key. The browser only reads variables prefixed with `REACT_APP_`; keep the personal access token and secret/service-role key server-side.
 
-The database migrations are in `supabase/migrations/`. They create profiles, trips, members, expenses, stays, vehicles, flights, comments, chat, settlement routing/history, avatar storage, realtime publication entries, RPCs, and row-level security policies.
+The database migrations are in `supabase/migrations/`. They create profiles, trips, members, expenses, stays, vehicles, flights, group decision polls, comments, chat, settlement routing/history, avatar storage, realtime publication entries, RPCs, and row-level security policies.
 
 For a new linked Supabase project, apply migrations with the Supabase CLI:
 
@@ -72,6 +72,7 @@ Supabase Auth uses `https://holidaysplits.com` as its Site URL. Keep `http://loc
 - Equal or exact custom expense shares
 - Per-item receipt contributor assignment
 - Dedicated restaurant split with item assignment, tip, and tax
+- Group voting for accommodations, rental cars, flights, restaurants, activities, and custom decisions
 - Settlement minimization across equal and custom splits
 - Alternative settlement routes through another member when a direct payment is not possible
 - Confirmed payments that update balances and move into a dated settlement history

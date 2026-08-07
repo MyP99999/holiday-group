@@ -25,6 +25,23 @@ export function nextPersonColor(people = [], seed = "") {
   return `hsl(${people.length * 37 % 360} 42% 43%)`;
 }
 
+export function normalizePaymentDetails(person = {}) {
+  return {
+    accountHolder: typeof person.accountHolder === "string" ? person.accountHolder : "",
+    iban: typeof person.iban === "string" ? person.iban : "",
+    paymentMethods: Array.isArray(person.paymentMethods)
+      ? person.paymentMethods
+        .filter((method) => method && typeof method === "object")
+        .map((method, index) => ({
+          id: method.id || `payment-method-${index}`,
+          type: method.type || "other",
+          value: typeof method.value === "string" ? method.value : "",
+        }))
+      : [],
+    paymentNote: typeof person.paymentNote === "string" ? person.paymentNote : "",
+  };
+}
+
 export function createDefaultTripState(tripName = "Untitled trip", creatorName = "") {
   const creatorId = createId("person");
   const createdAt = new Date().toISOString();
@@ -39,6 +56,7 @@ export function createDefaultTripState(tripName = "Untitled trip", creatorName =
     accommodations: [],
     vehicles: [],
     flights: [],
+    polls: [],
     comments: [],
     chatMessages: [],
     paymentRoutes: {},
@@ -54,7 +72,13 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
       const color = person.color && !people.some((existing) => existing.color === person.color)
         ? person.color
         : nextPersonColor(people, person.id || person.name);
-      people.push({ ...person, color, role: person.role === "admin" ? "admin" : "member", claimedAt: person.claimedAt || null });
+      people.push({
+        ...person,
+        ...normalizePaymentDetails(person),
+        color,
+        role: person.role === "admin" ? "admin" : "member",
+        claimedAt: person.claimedAt || null,
+      });
     });
   }
 
@@ -102,6 +126,24 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
       price: flight.price ?? "",
       currency: flight.currency || "EUR",
       participantIds: Array.isArray(flight.participantIds) ? flight.participantIds : [],
+    })) : [],
+    polls: Array.isArray(source.polls) ? source.polls.map((poll, pollIndex) => ({
+      ...poll,
+      id: poll.id || `poll-${pollIndex}`,
+      category: ["accommodation", "rental_car", "flight", "restaurant", "activity", "other"].includes(poll.category) ? poll.category : "other",
+      question: poll.question || "Group decision",
+      status: poll.status === "closed" ? "closed" : "open",
+      createdBy: poll.createdBy || "",
+      options: Array.isArray(poll.options) ? poll.options.map((option, optionIndex) => ({
+        ...option,
+        id: option.id || `${poll.id || `poll-${pollIndex}`}-choice-${optionIndex}`,
+        title: option.title || `Choice ${optionIndex + 1}`,
+        detail: option.detail || "",
+        price: option.price ?? "",
+        currency: option.currency || "EUR",
+        url: option.url || "",
+        voterIds: Array.isArray(option.voterIds) ? [...new Set(option.voterIds.map(String))] : [],
+      })) : [],
     })) : [],
     comments: Array.isArray(source.comments) ? source.comments : [],
     chatMessages: Array.isArray(source.chatMessages) ? source.chatMessages : [],

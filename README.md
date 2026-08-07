@@ -1,220 +1,114 @@
-# 🌴 Holiday Group
+# HolidaySplits
 
-A web app for planning and calculating group vacation costs, with an integrated **MCP (Model Context Protocol) server** so Claude Code can help you plan trips through natural conversation.
+A local-first React app for planning group trips, tracking shared expenses, splitting restaurant bills, reviewing receipt items, converting currencies, and settling balances.
 
----
-
-## 📁 Project Structure
-
-```
-holiday-group/
-├── public/
-│   └── index.html
-├── src/
-│   ├── index.js
-│   └── App.jsx            ← Main React application
-├── server/
-│   ├── mcp-server.js      ← MCP server (tools for Claude Code)
-│   ├── package.json
-│   └── claude_desktop_config.json  ← Example config for Claude Desktop
-├── package.json
-├── CLAUDE.md               ← Project context for Claude Code
-└── README.md
-```
-
----
-
-## 🚀 Part 1 — Run the React App
-
-### Prerequisites
-
-- **Node.js** >= 18 (download from https://nodejs.org)
-- **npm** (comes with Node.js)
-
-### Steps
+## Run locally
 
 ```bash
-# 1. Navigate to the project root
-cd holiday-group
-
-# 2. Install dependencies
 npm install
-
-# 3. Start the development server
 npm start
 ```
 
-The app will open at **http://localhost:3000**.
+The app runs at `http://localhost:3000`.
 
----
-
-## 🤖 Part 2 — Install Claude Code and Use It from VS Code Terminal
-
-Claude Code is Anthropic's CLI coding agent that runs directly in your terminal. You can use it inside VS Code's integrated terminal.
-
-### Prerequisites
-
-- A **Claude Pro, Max, Team, or Enterprise** subscription (the free plan does NOT include Claude Code)
-- **Node.js** >= 18 installed
-
-### Step 1 — Install Claude Code
-
-Open a terminal (either your system terminal or VS Code's integrated terminal) and run:
-
-**macOS / Linux:**
-```bash
-curl -fsSL https://claude.ai/install.sh | bash
-```
-
-**Windows (PowerShell):**
-```powershell
-irm https://claude.ai/install.ps1 | iex
-```
-
-> After installation, **close and reopen your terminal** so the `claude` command is recognized.
-
-Verify it works:
-```bash
-claude --version
-```
-
-### Step 2 — Authenticate
-
-Run `claude` for the first time — it will open your browser to log in:
+Create a production build with:
 
 ```bash
-claude
+npm run build
 ```
 
-Choose your authentication method:
-1. **Claude account with subscription** (Pro, Max, Team, or Enterprise)
-2. **Anthropic Console account** (API usage billing)
+## Product modes
 
-Follow the browser prompts, then return to the terminal.
+- **Local trip:** no account; each named trip is stored in this browser.
+- **Guest room:** no account; a room code is generated and stored in this browser.
+- **Account room:** Supabase email/password or Google authentication with database persistence and realtime room updates.
 
-### Step 3 — Open the project in VS Code and start Claude Code
+An account user can claim an unclaimed person that the organizer already added or join with a new trip-specific display name. The creator becomes the first admin. The no-account guest mode remains intentionally local until anonymous remote rooms are given their own abuse controls and retention policy.
+
+## Supabase setup
+
+Copy `.env.example` to `.env` and set the project URL and public anon key. The browser only reads variables prefixed with `REACT_APP_`; keep the personal access token and secret/service-role key server-side.
+
+The database migrations are in `supabase/migrations/`. They create profiles, trips, members, expenses, stays, vehicles, flights, comments, chat, settlement routing/history, avatar storage, realtime publication entries, RPCs, and row-level security policies.
+
+For a new linked Supabase project, apply migrations with the Supabase CLI:
 
 ```bash
-# Open the project folder in VS Code
-code holiday-group
-
-# In VS Code, open the integrated terminal:
-#   Menu -> Terminal -> New Terminal
-#   Or shortcut: Ctrl+` (backtick)
-
-# Navigate to the project root (if not already there)
-cd holiday-group
-
-# Start Claude Code
-claude
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase db push
 ```
 
-That's it! Claude Code is now running inside your VS Code terminal, with full context of the Holiday Group project.
+Email/password authentication works with Supabase Auth immediately. Google login also requires enabling the Google provider, adding the app URL to the allowed redirect URLs in the Supabase dashboard, and setting `REACT_APP_GOOGLE_AUTH_ENABLED=true`.
 
-### Step 4 — (Optional) Install the VS Code Extension
+For production email confirmations and password recovery, configure a custom SMTP provider in Supabase Authentication settings. Keep SMTP credentials out of all `REACT_APP_` variables; those variables are included in the browser bundle.
 
-For a nicer GUI experience with inline diffs:
+## Vercel deployment
 
-1. Open VS Code -> Extensions tab (Ctrl+Shift+X)
-2. Search for **"Claude Code"** by Anthropic
-3. Install it
-4. Click the Claude icon that appears in the top-right of VS Code
+The app is configured as a Create React App single-page application. `vercel.json` sends direct browser requests such as `/online` and `/guest` to `index.html`, where React Router handles them.
 
-The extension connects to your existing Claude Code CLI installation — no extra configuration needed.
+- Production: <https://holidaysplits.com>
+- Vercel project: <https://vercel.com/myp99999s-projects/holiday-group>
 
----
+### Automatic production pipeline
 
-## 🔧 Part 3 — Set Up the MCP Server (Holiday Tools for Claude Code)
+The repository is connected directly to the Vercel project and `main` is its production branch. Every push to `main` triggers both the GitHub Actions build check in `.github/workflows/production.yml` and Vercel's production deployment to `https://holidaysplits.com`. Pull requests run the same build check without publishing to production. The workflow can also be run manually from GitHub's Actions tab.
 
-The MCP server gives Claude Code 3 vacation-planning tools:
+Vercel's native Git integration owns the deployment step, so no `VERCEL_TOKEN` needs to be copied into GitHub Actions and a push creates only one deployment.
 
-| Tool                     | Description                                           |
-| ------------------------ | ----------------------------------------------------- |
-| `calculate_holiday_cost` | Full breakdown (accommodation + transport + rental)   |
-| `convert_currency`       | Convert between EUR, USD, RON                         |
-| `split_cost`             | Quick per-person split                                |
+Add only these browser-safe variables to the Vercel project's **Production** and **Preview** environments:
 
-### Step 1 — Install MCP server dependencies
-
-```bash
-cd holiday-group/server
-npm install
+```text
+REACT_APP_SUPABASE_URL
+REACT_APP_SUPABASE_ANON_KEY
+REACT_APP_GOOGLE_AUTH_ENABLED
 ```
 
-### Step 2 — Register the MCP server with Claude Code
+Do not upload the local `.env` file or add `SUPABASE_SECRET_KEY`, `SUPABASE_ACCESS_TOKEN`, SMTP/Resend credentials, or Vercel credentials to the frontend project. `.vercelignore` provides an additional safeguard for CLI deployments. Redeploy after changing Vercel environment variables because Create React App embeds `REACT_APP_` values during the build.
 
-From your terminal, run:
+Supabase Auth uses `https://holidaysplits.com` as its Site URL. Keep `http://localhost:3000/**`, the stable Vercel URL, and the required Vercel preview URL pattern in the redirect allow list for development and deployment previews.
 
-```bash
-claude mcp add holiday-group node /FULL/PATH/TO/holiday-group/server/mcp-server.js
+## Features
+
+- Equal or exact custom expense shares
+- Per-item receipt contributor assignment
+- Dedicated restaurant split with item assignment, tip, and tax
+- Settlement minimization across equal and custom splits
+- Alternative settlement routes through another member when a direct payment is not possible
+- Confirmed payments that update balances and move into a dated settlement history
+- Existing-person claiming during guest join, with duplicate and already-claimed protection
+- Stable, unique member colors with disambiguating 2–3 letter monograms, photo-ready avatars, and full names on hover or phone long-press
+- Multiple accommodations with total prices, selected participants, room capacities, room assignments, and guest/room split modes
+- Multiple cars with drivers, seat limits, passenger assignment, optional rental prices, and separate rental contributors
+- Flights with airports, airline/flight number, departure and arrival details, fares, travelers, comments, and equal splitting
+- Combined per-person planning totals across stays, car rentals, and flights
+- Comments attached to accommodations and cars, plus a persistent group chat
+- Creator/admin roles with admin promotion
+- 13 currencies with automatically refreshed daily ECB reference rates, six-hour browser caching, and an offline fallback table
+- English, Romanian, Spanish, French, and German interface languages
+- Responsive desktop workspace and mobile receipt, restaurant, logistics, and chat flows
+- Local and Supabase persistence through interchangeable storage drivers
+
+Receipt upload/camera capture is implemented, while OCR extraction is currently simulated with editable sample data. This keeps the review and contribution workflow usable before an OCR/backend service is connected.
+
+Currency rates are fetched from the keyless Frankfurter v2 API with the provider pinned to ECB data. The browser cache is reused for six hours and stale/fallback rates remain available when the live endpoint cannot be reached. Reference rates are informational and may differ from card or bank settlement rates.
+
+## Architecture
+
+```text
+src/
+  components/       Shared interface primitives
+  context/          App, authentication, and language state
+  layouts/          Responsive trip workspace shell
+  pages/            Landing, lobbies, expenses, scan, restaurant, settle, logistics, chat
+  storage/          Local session/room and Supabase driver adapters
+  constants.js      Currency metadata and reference values
+  utils.js          Conversion, shares, balances, and settlement helpers
 ```
 
-> Replace `/FULL/PATH/TO/` with the actual absolute path on your machine.
-> Example macOS: `claude mcp add holiday-group node /Users/alex/projects/holiday-group/server/mcp-server.js`
-> Example Windows (WSL): `claude mcp add holiday-group node /home/alex/projects/holiday-group/server/mcp-server.js`
+The UI reads and writes through a small driver contract (`read`, `write`, `subscribe`). Shared trip state contains people/roles and claim status, expenses, completed settlement payments, accommodations, vehicles, comments, chat messages, and payment-route preferences. Supabase account rooms use authenticated RPCs and realtime subscriptions; local and guest modes keep the same page-level workflows with browser storage.
 
-### Step 3 — Verify the tools are available
+Design references generated for this redesign are kept in `design-references/`. The production landing image is in `public/images/`.
 
-Start Claude Code and ask it to list its tools, or just try a prompt:
+## MCP server
 
-```bash
-claude
-```
-
-Then type something like:
-
-> "Calculate the cost for a 5-night trip to Greece for 6 people. Accommodation is 120 EUR/night, flights are 250 EUR/person, and we need 2 rental cars at 45 EUR/day for 5 days. Show me everything in RON."
-
-### Alternative: Connect to Claude Desktop App
-
-If you prefer the Claude Desktop app instead of the CLI:
-
-1. Open **Claude Desktop** -> **Settings** -> **Developer** -> **Edit Config**
-2. The config file is at:
-   - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-3. Add this:
-
-```json
-{
-  "mcpServers": {
-    "holiday-group": {
-      "command": "node",
-      "args": ["/FULL/PATH/TO/holiday-group/server/mcp-server.js"]
-    }
-  }
-}
-```
-
-4. **Restart Claude Desktop** completely.
-5. Look for the tools icon in the chat input.
-
----
-
-## 💬 Example Prompts
-
-Once the MCP server is connected, try asking Claude:
-
-- "Calculate the cost for a 5-night trip to Greece for 6 people. Accommodation is 120 EUR/night, flights are 250 EUR/person, and we need 2 rental cars at 45 EUR/day for 5 days. Show me everything in RON."
-- "Convert 500 RON to EUR."
-- "We spent 3200 EUR total. Split it between 8 people."
-
----
-
-## 💱 Exchange Rates
-
-The app uses **fixed indicative rates**:
-
-| From | To EUR | To USD | To RON |
-| ---- | ------ | ------ | ------ |
-| EUR  | 1.00   | 1.08   | 4.97   |
-| USD  | 0.926  | 1.00   | 4.60   |
-| RON  | 0.201  | 0.217  | 1.00   |
-
-To use live rates, integrate an API like exchangerate.host or Open Exchange Rates into both `App.jsx` and `mcp-server.js`.
-
----
-
-## 📝 License
-
-MIT — free to use and modify.
+The existing Model Context Protocol server remains under `server/`. Its package and configuration are independent from the React app.

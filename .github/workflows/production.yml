@@ -1,0 +1,51 @@
+name: Production pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build HolidaySplits
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production app
+        run: npm run build
+
+      - name: Record production deployment handoff
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          {
+            echo "## Production deployment"
+            echo
+            echo "The build passed. The connected Vercel Git integration deploys this commit to production."
+            echo
+            echo "Production URL: https://holidaysplits.com"
+          } >> "$GITHUB_STEP_SUMMARY"

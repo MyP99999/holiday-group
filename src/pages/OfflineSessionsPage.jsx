@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSession, deleteSession, getSessions } from "../storage/sessionsStore";
+import BrandButton from "../components/BrandButton";
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -26,7 +27,7 @@ export default function OfflineSessionsPage() {
 
   return (
     <div className="entry-page local-trips-page">
-      <div className="entry-topbar"><button className="wordmark" onClick={() => navigate("/")}>Holiday Group</button><button className="text-link" onClick={() => navigate("/")}>Back home</button></div>
+      <div className="entry-topbar"><BrandButton className="wordmark" onClick={() => navigate("/")} /><button className="text-link" onClick={() => navigate("/")}>Back home</button></div>
       <main className="trips-layout">
         <header className="trips-header">
           <div><h1>Your local trips</h1><p>Private to this device. No account, no setup.</p></div>

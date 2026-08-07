@@ -6,9 +6,11 @@ import { useApp } from "../context/AppContext";
 import { calculateSettlements, convert, fmt } from "../utils";
 import { createId } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrencyRates } from "../context/CurrencyRatesContext";
 
 export default function SettlePage() {
   const { t, locale } = useLanguage();
+  const { rateDate } = useCurrencyRates();
   const {
     people, expenses, paymentRoutes, setPaymentRoutes,
     settlementPayments, setSettlementPayments,
@@ -18,7 +20,7 @@ export default function SettlePage() {
   const [confirmingPayment, setConfirmingPayment] = useState(null);
   const { balances, transactions } = useMemo(
     () => calculateSettlements(people, expenses, settlementPayments),
-    [people, expenses, settlementPayments]
+    [people, expenses, settlementPayments, rateDate]
   );
   const paymentHistory = useMemo(
     () => [...settlementPayments].sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt)),

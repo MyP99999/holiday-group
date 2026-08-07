@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { normalizeTripState } from "../storage/tripState";
 
 export const AppContext = createContext(null);
@@ -8,39 +8,105 @@ export function useApp() {
 }
 
 export function AppProvider({ driver, currentMemberId = "", ownerMode = false, children }) {
-  // Single state object avoids stale-closure issues when writing back to storage
-  const [state, setState] = useState(() => normalizeTripState(driver.read()));
+  const [state, setState] = useState(() => (
+    driver.isAsync ? null : normalizeTripState(driver.read())
+  ));
+  const stateRef = useRef(state);
+  const [loadError, setLoadError] = useState("");
+  const [syncError, setSyncError] = useState("");
+  const [pendingWrites, setPendingWrites] = useState(0);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  // Cross-tab / cross-device sync (no-op for memoryDriver)
   useEffect(() => {
-    // Persist state migrations (for example, stable member colors) as soon as
-    // an older trip is opened instead of waiting for the next user edit.
-    driver.write(normalizeTripState(driver.read()));
-    return driver.subscribe((newState) => setState(normalizeTripState(newState)));
-  }, [driver]);
+    let active = true;
+    let unsubscribe = () => {};
 
-  const setField = (field, updater) => {
-    setState((prev) => {
-      const value = typeof updater === "function" ? updater(prev[field]) : updater;
-      const next = { ...prev, [field]: value };
-      driver.write(next);
-      return next;
-    });
+    const start = async () => {
+      setLoadError("");
+      try {
+        const nextState = normalizeTripState(await driver.read());
+        if (!active) return;
+        stateRef.current = nextState;
+        setState(nextState);
+
+        if (!driver.isAsync) driver.write(nextState);
+        unsubscribe = driver.subscribe((remoteState) => {
+          if (active) {
+            const normalized = normalizeTripState(remoteState);
+            stateRef.current = normalized;
+            setState(normalized);
+          }
+        });
+      } catch (error) {
+        if (active) setLoadError(error.message || "Could not load this trip.");
+      }
+    };
+
+    start();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [driver, reloadKey]);
+
+  const persist = (nextState) => {
+    setSyncError("");
+    try {
+      const result = driver.write(nextState);
+      if (result && typeof result.then === "function") {
+        setPendingWrites((count) => count + 1);
+        result
+          .catch((error) => setSyncError(error.message || "Changes could not be synced."))
+          .finally(() => setPendingWrites((count) => Math.max(0, count - 1)));
+      }
+    } catch (error) {
+      setSyncError(error.message || "Changes could not be saved.");
+    }
   };
 
-  const currentPerson = state.people.find((person) => String(person.id) === String(currentMemberId)) || null;
+  const setField = (field, updater) => {
+    const previous = stateRef.current;
+    if (!previous) return;
+    const value = typeof updater === "function" ? updater(previous[field]) : updater;
+    const next = { ...previous, [field]: value };
+    stateRef.current = next;
+    setState(next);
+    persist(next);
+  };
+
+  if (!state) {
+    return (
+      <div className="app-loading app-loading-state">
+        {loadError ? (
+          <>
+            <strong>We couldn't open this trip.</strong>
+            <small>{loadError}</small>
+            <button className="button secondary" onClick={() => setReloadKey((key) => key + 1)}>Try again</button>
+          </>
+        ) : (
+          <><span />Loading your shared tripâ€¦</>
+        )}
+      </div>
+    );
+  }
+
+  const effectiveMemberId = currentMemberId || state.currentMemberId || "";
+  const currentPerson = state.people.find((person) => String(person.id) === String(effectiveMemberId)) || null;
   const canManageMembers = ownerMode || currentPerson?.role === "admin";
 
   return (
     <AppContext.Provider value={{
       ...state,
-      currentMemberId,
+      currentMemberId: effectiveMemberId,
       currentPerson,
       canManageMembers,
+      isSyncing: pendingWrites > 0,
+      syncError,
       setPeople: (updater) => setField("people", updater),
       setExpenses: (updater) => setField("expenses", updater),
       setAccommodations: (updater) => setField("accommodations", updater),
       setVehicles: (updater) => setField("vehicles", updater),
+      setFlights: (updater) => setField("flights", updater),
       setComments: (updater) => setField("comments", updater),
       setChatMessages: (updater) => setField("chatMessages", updater),
       setPaymentRoutes: (updater) => setField("paymentRoutes", updater),

@@ -5,11 +5,17 @@ import ChatPanel from "../components/ChatPanel";
 import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrencyRates } from "../context/CurrencyRatesContext";
 import { createId } from "../storage/tripState";
 import { convert, fmt } from "../utils";
 
 const emptyStay = { name: "", location: "", nights: 1, price: "", currency: "EUR", splitMode: "people" };
 const emptyCar = { name: "", seats: 5 };
+const emptyFlight = {
+  airline: "", flightNumber: "", from: "", to: "",
+  departureDate: "", departureTime: "", arrivalDate: "", arrivalTime: "",
+  price: "", currency: "EUR",
+};
 
 function uniqueIds(ids = []) {
   return [...new Set(ids.map(String))];
@@ -39,6 +45,13 @@ function getRentalShares(vehicle) {
   const participants = uniqueIds(vehicle.rentalParticipantIds);
   const total = Number(vehicle.rentalPrice) || 0;
   if (!vehicle.rentalEnabled || !participants.length) return {};
+  return Object.fromEntries(participants.map((id) => [id, total / participants.length]));
+}
+
+function getFlightShares(flight) {
+  const participants = uniqueIds(flight.participantIds);
+  const total = Number(flight.price) || 0;
+  if (!participants.length) return {};
   return Object.fromEntries(participants.map((id) => [id, total / participants.length]));
 }
 
@@ -72,11 +85,14 @@ function CommentThread({ targetType, targetId }) {
 
 export default function PlanPage() {
   const { t } = useLanguage();
-  const { people, accommodations, setAccommodations, vehicles, setVehicles } = useApp();
+  const { rateDate } = useCurrencyRates();
+  const { people, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights } = useApp();
   const [showStayForm, setShowStayForm] = useState(false);
   const [showCarForm, setShowCarForm] = useState(false);
+  const [showFlightForm, setShowFlightForm] = useState(false);
   const [stayForm, setStayForm] = useState(emptyStay);
   const [carForm, setCarForm] = useState(emptyCar);
+  const [flightForm, setFlightForm] = useState(emptyFlight);
   const [outputCurrency, setOutputCurrency] = useState("EUR");
 
   const personName = (id) => people.find((person) => String(person.id) === String(id))?.name || t("unassigned");
@@ -84,9 +100,10 @@ export default function PlanPage() {
   const personIndex = (id) => people.findIndex((person) => String(person.id) === String(id));
 
   const costSummary = useMemo(() => {
-    const rows = Object.fromEntries(people.map((person) => [String(person.id), { stays: 0, rentals: 0 }]));
+    const rows = Object.fromEntries(people.map((person) => [String(person.id), { stays: 0, rentals: 0, flights: 0 }]));
     let accommodationTotal = 0;
     let rentalTotal = 0;
+    let flightTotal = 0;
 
     accommodations.forEach((stay) => {
       accommodationTotal += convert(Number(stay.price) || 0, stay.currency, outputCurrency);
@@ -102,8 +119,15 @@ export default function PlanPage() {
       });
     });
 
-    return { rows, accommodationTotal, rentalTotal, grandTotal: accommodationTotal + rentalTotal };
-  }, [people, accommodations, vehicles, outputCurrency]);
+    flights.forEach((flight) => {
+      flightTotal += convert(Number(flight.price) || 0, flight.currency, outputCurrency);
+      Object.entries(getFlightShares(flight)).forEach(([id, amount]) => {
+        if (rows[id]) rows[id].flights += convert(amount, flight.currency, outputCurrency);
+      });
+    });
+
+    return { rows, accommodationTotal, rentalTotal, flightTotal, grandTotal: accommodationTotal + rentalTotal + flightTotal };
+  }, [people, accommodations, vehicles, flights, outputCurrency, rateDate]);
 
   const createStay = () => {
     if (!stayForm.name.trim()) return;
@@ -231,6 +255,38 @@ export default function PlanPage() {
       rentalParticipantIds: selected
         ? vehicle.rentalParticipantIds.filter((id) => String(id) !== String(personId))
         : [...vehicle.rentalParticipantIds, personId],
+    };
+  }));
+
+  const createFlight = () => {
+    if (!flightForm.from.trim() || !flightForm.to.trim()) return;
+    setFlights((current) => [...current, {
+      id: createId("flight"),
+      ...flightForm,
+      from: flightForm.from.trim().toUpperCase(),
+      to: flightForm.to.trim().toUpperCase(),
+      airline: flightForm.airline.trim(),
+      flightNumber: flightForm.flightNumber.trim().toUpperCase(),
+      price: Number(flightForm.price) || 0,
+      participantIds: [],
+      createdAt: new Date().toISOString(),
+    }]);
+    setFlightForm(emptyFlight);
+    setShowFlightForm(false);
+  };
+
+  const updateFlight = (flightId, fields) => setFlights((current) => current.map((flight) =>
+    String(flight.id) === String(flightId) ? { ...flight, ...fields } : flight
+  ));
+
+  const toggleFlightParticipant = (flightId, personId) => setFlights((current) => current.map((flight) => {
+    if (String(flight.id) !== String(flightId)) return flight;
+    const selected = flight.participantIds.map(String).includes(String(personId));
+    return {
+      ...flight,
+      participantIds: selected
+        ? flight.participantIds.filter((id) => String(id) !== String(personId))
+        : [...flight.participantIds, personId],
     };
   }));
 
@@ -369,10 +425,60 @@ export default function PlanPage() {
             }) : !showCarForm && <div className="open-empty"><strong>{t("no_cars")}</strong><span>{t("no_cars_desc")}</span></div>}
           </section>
 
+          <section className="logistics-section flights-section">
+            <div className="logistics-section-heading">
+              <div><h2>{t("flights")}</h2><p>{t("flights_help")}</p></div>
+              <div className="section-heading-actions"><strong>{fmt(costSummary.flightTotal, outputCurrency)}<span>{t("flight_total")}</span></strong><button className="button secondary small-button" onClick={() => setShowFlightForm(true)}>{t("add_flight")}</button></div>
+            </div>
+
+            {showFlightForm && (
+              <div className="flight-creator">
+                <label><span>{t("from_airport")}</span><input autoFocus maxLength={4} value={flightForm.from} onChange={(event) => setFlightForm((current) => ({ ...current, from: event.target.value.toUpperCase() }))} placeholder="OTP" /></label>
+                <label><span>{t("to_airport")}</span><input maxLength={4} value={flightForm.to} onChange={(event) => setFlightForm((current) => ({ ...current, to: event.target.value.toUpperCase() }))} placeholder="BCN" /></label>
+                <label><span>{t("airline")}</span><input value={flightForm.airline} onChange={(event) => setFlightForm((current) => ({ ...current, airline: event.target.value }))} placeholder="TAROM" /></label>
+                <label><span>{t("flight_number")}</span><input value={flightForm.flightNumber} onChange={(event) => setFlightForm((current) => ({ ...current, flightNumber: event.target.value }))} placeholder="RO 421" /></label>
+                <label><span>{t("departure")}</span><input type="date" value={flightForm.departureDate} onChange={(event) => setFlightForm((current) => ({ ...current, departureDate: event.target.value }))} /></label>
+                <label><span>{t("total_fare")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={flightForm.price} onChange={(event) => setFlightForm((current) => ({ ...current, price: event.target.value }))} placeholder="0.00" /><CurrencySelect value={flightForm.currency} onChange={(currency) => setFlightForm((current) => ({ ...current, currency }))} /></div></label>
+                <button className="button primary small-button" onClick={createFlight}>{t("create_flight")}</button>
+                <button className="text-link" onClick={() => setShowFlightForm(false)}>{t("cancel")}</button>
+              </div>
+            )}
+
+            {flights.length ? flights.map((flight) => {
+              const flightShares = getFlightShares(flight);
+              return (
+                <article className="flight-block" key={flight.id}>
+                  <header className="flight-heading">
+                    <div><span>{flight.flightNumber || flight.airline || t("flight")}</span><h3>{flight.from} <b>â†’</b> {flight.to}</h3><small>{[flight.airline, flight.departureDate].filter(Boolean).join(" Â· ")}</small></div>
+                    <div><strong>{fmt(flight.price, flight.currency)}</strong><button className="row-action" onClick={() => setFlights((current) => current.filter((item) => item.id !== flight.id))}>{t("remove")}</button></div>
+                  </header>
+
+                  <div className="flight-details-grid">
+                    <label><span>{t("airline")}</span><input value={flight.airline} onChange={(event) => updateFlight(flight.id, { airline: event.target.value })} /></label>
+                    <label><span>{t("flight_number")}</span><input value={flight.flightNumber} onChange={(event) => updateFlight(flight.id, { flightNumber: event.target.value.toUpperCase() })} /></label>
+                    <label><span>{t("departure")}</span><div className="date-time-fields"><input type="date" value={flight.departureDate} onChange={(event) => updateFlight(flight.id, { departureDate: event.target.value })} /><input type="time" value={flight.departureTime} onChange={(event) => updateFlight(flight.id, { departureTime: event.target.value })} /></div></label>
+                    <label><span>{t("arrival")}</span><div className="date-time-fields"><input type="date" value={flight.arrivalDate} onChange={(event) => updateFlight(flight.id, { arrivalDate: event.target.value })} /><input type="time" value={flight.arrivalTime} onChange={(event) => updateFlight(flight.id, { arrivalTime: event.target.value })} /></div></label>
+                    <label><span>{t("total_fare")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={flight.price} onChange={(event) => updateFlight(flight.id, { price: event.target.value })} /><CurrencySelect value={flight.currency} onChange={(currency) => updateFlight(flight.id, { currency })} /></div></label>
+                  </div>
+
+                  <div className="participation-block flight-participation">
+                    <div><strong>{t("who_is_flying")}</strong><span>{t("flight_participants_help")}</span></div>
+                    <div className="participant-buttons">{people.map((person) => {
+                      const selected = flight.participantIds.map(String).includes(String(person.id));
+                      return <button className={selected ? "selected" : ""} key={person.id} onClick={() => toggleFlightParticipant(flight.id, person.id)}><PersonAvatar person={person} people={people} index={personIndex(person.id)} size="small" inControl />{person.name}</button>;
+                    })}</div>
+                  </div>
+                  <div className="split-preview"><strong>{t("flight_split")}</strong><div>{Object.keys(flightShares).length ? Object.entries(flightShares).map(([id, share]) => <span key={id}><b>{personName(id)}</b>{fmt(share, flight.currency)}</span>) : <small>{t("select_participants_first")}</small>}</div></div>
+                  <CommentThread targetType="flight" targetId={flight.id} />
+                </article>
+              );
+            }) : !showFlightForm && <div className="open-empty"><strong>{t("no_flights")}</strong><span>{t("no_flights_desc")}</span></div>}
+          </section>
+
           <section className="allocation-summary">
             <header><div><h2>{t("planned_split")}</h2><p>{t("planned_split_desc")}</p></div><strong>{fmt(costSummary.grandTotal, outputCurrency)}</strong></header>
             <div className="allocation-table">
-              <div className="allocation-table-head"><span>{t("people")}</span><span>{t("stays")}</span><span>{t("rentals")}</span><span>{t("total")}</span></div>
+              <div className="allocation-table-head"><span>{t("people")}</span><span>{t("stays")}</span><span>{t("rentals")}</span><span>{t("flights")}</span><span>{t("total")}</span></div>
               {people.map((person, index) => {
                 const row = costSummary.rows[String(person.id)];
                 return (
@@ -380,7 +486,8 @@ export default function PlanPage() {
                     <span><PersonAvatar person={person} people={people} index={index} size="small" /><strong>{person.name}</strong></span>
                     <span>{fmt(row.stays, outputCurrency)}</span>
                     <span>{fmt(row.rentals, outputCurrency)}</span>
-                    <strong>{fmt(row.stays + row.rentals, outputCurrency)}</strong>
+                    <span>{fmt(row.flights, outputCurrency)}</span>
+                    <strong>{fmt(row.stays + row.rentals + row.flights, outputCurrency)}</strong>
                   </div>
                 );
               })}

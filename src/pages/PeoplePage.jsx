@@ -4,21 +4,23 @@ import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
 import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
-import { CURRENCY_META, EUR_RATES, RATE_DATE } from "../constants";
+import { CURRENCY_META } from "../constants";
 import { calculateBalances, convert, fmt } from "../utils";
 import { createId, nextPersonColor } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrencyRates } from "../context/CurrencyRatesContext";
 
 export default function PeoplePage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { rates, rateDate, status: rateStatus, isRefreshing, refreshRates } = useCurrencyRates();
   const { people, setPeople, expenses, settlementPayments, currentMemberId, canManageMembers } = useApp();
   const [name, setName] = useState("");
   const [displayCurrency, setDisplayCurrency] = useState("EUR");
-  const balances = useMemo(() => calculateBalances(people, expenses, settlementPayments), [people, expenses, settlementPayments]);
+  const balances = useMemo(() => calculateBalances(people, expenses, settlementPayments), [people, expenses, settlementPayments, rateDate]);
   const totalSpent = useMemo(
     () => expenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
-    [expenses, displayCurrency]
+    [expenses, displayCurrency, rateDate]
   );
   const personHasRecords = (id) => expenses.some((expense) =>
     String(expense.paidById) === String(id) ||
@@ -79,7 +81,7 @@ export default function PeoplePage() {
         <div><strong>{fmt(totalSpent, displayCurrency)}</strong><span>{t("total_spent")}</span></div>
         <div><strong>{people.length ? fmt(totalSpent / people.length, displayCurrency) : fmt(0, displayCurrency)}</strong><span>{t("per_person")}</span></div>
         <div><strong>{people.length}</strong><span>{t("people")}</span></div>
-        <div className="rate-status"><span>{t("rates_updated")}</span><strong>{RATE_DATE}</strong></div>
+        <div className="rate-status"><span>{rateStatus === "live" ? t("live_rates") : t("rates_updated")}</span><strong>{rateDate}</strong></div>
       </section>
 
       <div className="overview-grid">
@@ -120,10 +122,10 @@ export default function PeoplePage() {
         <aside className="surface-panel currency-panel">
           <div className="panel-heading compact-heading">
             <div><h2>{t("currency_desk")}</h2><p>{t("currency_desc")}</p></div>
-            <CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} />
+            <div className="currency-panel-actions"><CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} /><button className="text-link" disabled={isRefreshing} onClick={refreshRates}>{isRefreshing ? t("updating_rates") : t("refresh_rates")}</button></div>
           </div>
           <div className="rate-list">
-            {Object.entries(EUR_RATES).filter(([code]) => code !== "EUR").map(([code, rate]) => (
+            {Object.entries(rates).filter(([code]) => code !== "EUR").map(([code, rate]) => (
               <div className="rate-row" key={code}>
                 <span><strong>{code}</strong>{CURRENCY_META[code].name}</span>
                 <b>{rate.toLocaleString("en-US", { maximumFractionDigits: 4 })}</b>

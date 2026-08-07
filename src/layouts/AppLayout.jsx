@@ -8,8 +8,10 @@ import {
   LuMessageCircle,
 } from "react-icons/lu";
 import { AppProvider } from "../context/AppContext";
+import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
 import LanguageSelect from "../components/LanguageSelect";
+import BrandButton from "../components/BrandButton";
 
 const navItems = [
   { to: "people", labelKey: "overview", desktop: true },
@@ -22,10 +24,20 @@ const navItems = [
 ];
 
 export default function AppLayout({ driver, currentMemberId, roomCode, sessionName, backTo = "/", guest = false, ownerMode = false }) {
+  return (
+    <AppProvider driver={driver} currentMemberId={currentMemberId} ownerMode={ownerMode}>
+      <AppLayoutContent roomCode={roomCode} sessionName={sessionName} backTo={backTo} guest={guest} />
+    </AppProvider>
+  );
+}
+
+function AppLayoutContent({ roomCode, sessionName, backTo, guest }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { tripName, isSyncing, syncError } = useApp();
   const [copied, setCopied] = useState(false);
+  const displayedTripName = tripName || sessionName || t("untitled_trip");
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -47,13 +59,12 @@ export default function AppLayout({ driver, currentMemberId, roomCode, sessionNa
   };
 
   return (
-    <AppProvider driver={driver} currentMemberId={currentMemberId} ownerMode={ownerMode}>
       <div className="app-shell">
         <aside className="app-sidebar">
-          <button className="brand-button" onClick={() => navigate("people")}>Holiday Group</button>
+          <BrandButton className="brand-button" onClick={() => navigate("people")} />
           <div className="trip-switcher">
             <span>{t("current_trip")}</span>
-            <strong>{sessionName || t("untitled_trip")}</strong>
+            <strong>{displayedTripName}</strong>
           </div>
 
           <nav className="side-nav" aria-label="Trip navigation">
@@ -66,6 +77,8 @@ export default function AppLayout({ driver, currentMemberId, roomCode, sessionNa
 
           <div className="sidebar-status">
             <LanguageSelect />
+            {isSyncing && <span className="sync-status">Saving changesâ€¦</span>}
+            {syncError && <span className="sync-status sync-error" title={syncError}>Sync needs attention</span>}
             {roomCode ? (
               <>
                 <span>{guest ? t("guest_room") : t("shared_room")} · {roomCode}</span>
@@ -82,8 +95,8 @@ export default function AppLayout({ driver, currentMemberId, roomCode, sessionNa
         </aside>
 
         <div className="mobile-app-header">
-          <button className="mobile-brand" onClick={() => navigate("people")}>Holiday Group</button>
-          <button className="mobile-trip" onClick={() => navigate("people")}>{sessionName || t("untitled_trip")}</button>
+          <BrandButton className="mobile-brand" onClick={() => navigate("people")} />
+          <button className="mobile-trip" onClick={() => navigate("people")}>{displayedTripName}</button>
           <LanguageSelect compact />
         </div>
 
@@ -100,6 +113,5 @@ export default function AppLayout({ driver, currentMemberId, roomCode, sessionNa
           ))}
         </nav>
       </div>
-    </AppProvider>
   );
 }

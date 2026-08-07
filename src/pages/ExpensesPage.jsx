@@ -4,9 +4,9 @@ import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
 import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
-import { RATE_DATE } from "../constants";
 import { convert, fmt, getExpenseShares } from "../utils";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrencyRates } from "../context/CurrencyRatesContext";
 
 const emptyForm = {
   description: "",
@@ -21,6 +21,7 @@ const emptyForm = {
 export default function ExpensesPage() {
   const navigate = useNavigate();
   const { t, locale } = useLanguage();
+  const { rateDate, status: rateStatus } = useCurrencyRates();
   const formRef = useRef(null);
   const { people, expenses, setExpenses } = useApp();
   const [displayCurrency, setDisplayCurrency] = useState("EUR");
@@ -28,7 +29,7 @@ export default function ExpensesPage() {
   const [error, setError] = useState("");
   const totalSpent = useMemo(
     () => expenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
-    [expenses, displayCurrency]
+    [expenses, displayCurrency, rateDate]
   );
 
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function ExpensesPage() {
         <div><strong>{fmt(totalSpent, displayCurrency)}</strong><span>{t("total_spent")}</span></div>
         <div><strong>{people.length ? fmt(totalSpent / people.length, displayCurrency) : fmt(0, displayCurrency)}</strong><span>{t("per_person")}</span></div>
         <div><strong>{people.length}</strong><span>{t("people")}</span></div>
-        <div className="rate-status"><span>{t("rates_updated")}</span><strong>{RATE_DATE}</strong></div>
+        <div className="rate-status"><span>{rateStatus === "live" ? t("live_rates") : t("rates_updated")}</span><strong>{rateDate}</strong></div>
       </section>
 
       <div className="expense-workspace">

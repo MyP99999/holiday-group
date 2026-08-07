@@ -4,6 +4,7 @@ import { claimRoomPerson, createRoom, generateRoomCode, joinRoom, localStorageDr
 import LanguageSelect from "../components/LanguageSelect";
 import PersonAvatar from "../components/PersonAvatar";
 import { useLanguage } from "../context/LanguageContext";
+import BrandButton from "../components/BrandButton";
 
 export default function GuestLobbyPage() {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ export default function GuestLobbyPage() {
   return (
     <div className="entry-page">
       <div className="entry-topbar">
-        <button className="wordmark" onClick={() => navigate("/")}>Holiday Group</button>
+        <BrandButton className="wordmark" onClick={() => navigate("/")} />
         <div className="entry-actions"><LanguageSelect /><button className="text-link" onClick={() => navigate("/")}>{t("back_home")}</button></div>
       </div>
       <main className="lobby-layout">

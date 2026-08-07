@@ -3,7 +3,9 @@ import { useMemo } from "react";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
+import { CurrencyRatesProvider } from "./context/CurrencyRatesContext";
 import { getRoomIdentity, localStorageDriver } from "./storage/localStorageDriver";
+import { supabaseRoomDriver } from "./storage/supabaseDriver";
 import { sessionDriver, getSession } from "./storage/sessionsStore";
 
 import AppLayout from "./layouts/AppLayout";
@@ -23,7 +25,8 @@ import ChatPage from "./pages/ChatPage";
 import "./App.css";
 
 function RequireAuth({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return <div className="app-loading"><span />Checking your sessionâ€¦</div>;
   if (!user) return <Navigate to="/online" replace />;
   return children;
 }
@@ -38,10 +41,8 @@ function OfflineLayout() {
 
 function OnlineRoomLayout() {
   const { roomId } = useParams();
-  const driver = useMemo(() => localStorageDriver(roomId), [roomId]);
-  if (!driver.exists()) return <Navigate to="/online/lobby" replace />;
-  const room = driver.read();
-  return <AppLayout key={roomId} driver={driver} currentMemberId={getRoomIdentity(roomId)} roomCode={roomId} sessionName={room?.tripName} backTo="/online/lobby" />;
+  const driver = useMemo(() => supabaseRoomDriver(roomId), [roomId]);
+  return <AppLayout key={roomId} driver={driver} roomCode={roomId} backTo="/online/lobby" />;
 }
 
 function GuestRoomLayout() {
@@ -54,8 +55,9 @@ function GuestRoomLayout() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
+    <CurrencyRatesProvider>
+      <LanguageProvider>
+        <AuthProvider>
         <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -109,7 +111,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </BrowserRouter>
-      </AuthProvider>
-    </LanguageProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </CurrencyRatesProvider>
   );
 }

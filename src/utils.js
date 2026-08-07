@@ -1,9 +1,11 @@
-import { EUR_RATES, CURRENCY_SYMBOLS, PERSON_COLORS } from "./constants";
+import { CURRENCY_SYMBOLS, PERSON_COLORS } from "./constants";
+import { getCurrencyRates } from "./currencyRates";
 
 export function convert(amount, from = "EUR", to = "EUR") {
   const numeric = Number(amount);
-  if (!Number.isFinite(numeric) || !EUR_RATES[from] || !EUR_RATES[to]) return 0;
-  return (numeric / EUR_RATES[from]) * EUR_RATES[to];
+  const rates = getCurrencyRates();
+  if (!Number.isFinite(numeric) || !rates[from] || !rates[to]) return 0;
+  return (numeric / rates[from]) * rates[to];
 }
 
 export function fmt(value, currency = "EUR") {

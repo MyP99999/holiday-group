@@ -119,7 +119,10 @@ function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo }) {
         <div className="mobile-app-header">
           <BrandButton className="mobile-brand" onClick={() => navigate("people")} />
           <button className="mobile-trip" onClick={() => navigate("people")}>{displayedTripName}</button>
-          <LanguageSelect compact />
+          <div className="mobile-header-actions">
+            {roomCode && <button className="mobile-invite-button" onClick={copyCode}>{copied ? t("copied") : t("invite_friend")}</button>}
+            <LanguageSelect compact />
+          </div>
         </div>
 
         <main className="page-content">

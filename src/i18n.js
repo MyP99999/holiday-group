@@ -469,6 +469,77 @@ Object.assign(de, {
   room_ready_after_sign_in: "Erstelle ein Konto oder melde dich an, um Raum {code} zu öffnen.",
 });
 
+Object.assign(en, {
+  invite_friend: "Invite",
+  tutorial_title: "Your trip, sorted in 60 seconds.",
+  tutorial_desc: "Open the quick guide and see how a room goes from invite to settled.",
+  tutorial_open: "Open the quick guide", tutorial_close: "Close the quick guide",
+  tutorial_create_title: "Create the room", tutorial_create_desc: "Create an account, name the trip and add the people who may share costs. The creator starts as admin.",
+  tutorial_invite_title: "Share one invite", tutorial_invite_desc: "Copy the invitation link from the trip. Friends create an account or sign in, and the room code is already waiting in the join box.",
+  tutorial_spend_title: "Add what everyone spent", tutorial_spend_desc: "Record a normal expense, scan a bill or use the dedicated restaurant, stay, car and flight splits.",
+  tutorial_settle_title: "Settle without the awkwardness", tutorial_settle_desc: "HolidaySplits reduces the balances to clear payments. Confirm each payment and keep the history together.",
+  tutorial_invite_link: "Invite link", tutorial_copy_link: "Copy link",
+  social_instagram_alt: "Friends planning a shared trip on a Mediterranean terrace",
+  social_tiktok_alt: "Friends planning a coastal road trip beside their rental car",
+  how_group_desc: "Create a local trip or share an account-protected room with one invitation link.",
+});
+Object.assign(ro, {
+  invite_friend: "Invită",
+  tutorial_title: "Excursia ta, organizată în 60 de secunde.",
+  tutorial_desc: "Deschide ghidul rapid și vezi cum ajunge o cameră de la invitație la decontare.",
+  tutorial_open: "Deschide ghidul rapid", tutorial_close: "Închide ghidul rapid",
+  tutorial_create_title: "Creează camera", tutorial_create_desc: "Creează un cont, denumește excursia și adaugă persoanele care vor împărți costurile. Creatorul devine administrator.",
+  tutorial_invite_title: "Trimite o singură invitație", tutorial_invite_desc: "Copiază linkul invitației din excursie. Prietenii își creează un cont sau se autentifică, iar codul camerei îi așteaptă deja în câmpul de alăturare.",
+  tutorial_spend_title: "Adaugă ce a plătit fiecare", tutorial_spend_desc: "Înregistrează o cheltuială, scanează un bon sau folosește împărțirile pentru restaurant, cazare, mașină și zbor.",
+  tutorial_settle_title: "Decontează fără momente stânjenitoare", tutorial_settle_desc: "HolidaySplits reduce soldurile la plăți clare. Confirmă fiecare plată și păstrează istoricul într-un singur loc.",
+  tutorial_invite_link: "Link de invitație", tutorial_copy_link: "Copiază linkul",
+  social_instagram_alt: "Prieteni care planifică o excursie comună pe o terasă mediteraneeană",
+  social_tiktok_alt: "Prieteni care planifică un drum pe coastă lângă mașina închiriată",
+  how_group_desc: "Creează o excursie locală sau distribuie o cameră protejată prin cont cu un singur link.",
+});
+Object.assign(es, {
+  invite_friend: "Invitar",
+  tutorial_title: "Tu viaje, organizado en 60 segundos.",
+  tutorial_desc: "Abre la guía rápida y descubre cómo una sala pasa de la invitación a las cuentas saldadas.",
+  tutorial_open: "Abrir la guía rápida", tutorial_close: "Cerrar la guía rápida",
+  tutorial_create_title: "Crea la sala", tutorial_create_desc: "Crea una cuenta, pon nombre al viaje y añade a quienes compartirán gastos. La persona creadora empieza como administradora.",
+  tutorial_invite_title: "Comparte una invitación", tutorial_invite_desc: "Copia el enlace desde el viaje. Tus amigos crean una cuenta o inician sesión y el código ya aparece en el campo para unirse.",
+  tutorial_spend_title: "Añade lo que pagó cada persona", tutorial_spend_desc: "Registra un gasto, escanea un recibo o usa los repartos de restaurante, alojamiento, coche y vuelo.",
+  tutorial_settle_title: "Salda sin momentos incómodos", tutorial_settle_desc: "HolidaySplits reduce los saldos a pagos claros. Confirma cada pago y conserva el historial en un solo lugar.",
+  tutorial_invite_link: "Enlace de invitación", tutorial_copy_link: "Copiar enlace",
+  social_instagram_alt: "Amigos planificando un viaje compartido en una terraza mediterránea",
+  social_tiktok_alt: "Amigos planificando una ruta costera junto a su coche de alquiler",
+  how_group_desc: "Crea un viaje local o comparte una sala protegida por cuenta con un solo enlace.",
+});
+Object.assign(fr, {
+  invite_friend: "Inviter",
+  tutorial_title: "Votre voyage, organisé en 60 secondes.",
+  tutorial_desc: "Ouvrez le guide rapide et découvrez comment un salon passe de l’invitation au règlement.",
+  tutorial_open: "Ouvrir le guide rapide", tutorial_close: "Fermer le guide rapide",
+  tutorial_create_title: "Créez le salon", tutorial_create_desc: "Créez un compte, nommez le voyage et ajoutez les personnes qui partageront les frais. Le créateur devient administrateur.",
+  tutorial_invite_title: "Partagez une invitation", tutorial_invite_desc: "Copiez le lien depuis le voyage. Vos amis créent un compte ou se connectent et le code est déjà présent dans le champ pour rejoindre.",
+  tutorial_spend_title: "Ajoutez ce que chacun a payé", tutorial_spend_desc: "Saisissez une dépense, scannez un reçu ou utilisez les partages dédiés au restaurant, séjour, voiture et vol.",
+  tutorial_settle_title: "Réglez sans malaise", tutorial_settle_desc: "HolidaySplits réduit les soldes à des paiements clairs. Confirmez chaque paiement et conservez l’historique au même endroit.",
+  tutorial_invite_link: "Lien d’invitation", tutorial_copy_link: "Copier le lien",
+  social_instagram_alt: "Des amis organisent un voyage commun sur une terrasse méditerranéenne",
+  social_tiktok_alt: "Des amis organisent un trajet côtier près de leur voiture de location",
+  how_group_desc: "Créez un voyage local ou partagez un salon protégé par un compte avec un seul lien.",
+});
+Object.assign(de, {
+  invite_friend: "Einladen",
+  tutorial_title: "Deine Reise, in 60 Sekunden organisiert.",
+  tutorial_desc: "Öffne die Kurzanleitung und sieh, wie ein Raum von der Einladung bis zum Ausgleich funktioniert.",
+  tutorial_open: "Kurzanleitung öffnen", tutorial_close: "Kurzanleitung schließen",
+  tutorial_create_title: "Raum erstellen", tutorial_create_desc: "Erstelle ein Konto, benenne die Reise und füge alle hinzu, die Kosten teilen. Der Ersteller beginnt als Admin.",
+  tutorial_invite_title: "Eine Einladung teilen", tutorial_invite_desc: "Kopiere den Einladungslink aus der Reise. Freunde erstellen ein Konto oder melden sich an und der Raumcode steht bereits im Beitrittsfeld.",
+  tutorial_spend_title: "Ausgaben aller erfassen", tutorial_spend_desc: "Erfasse eine Ausgabe, scanne einen Beleg oder nutze die Aufteilungen für Restaurant, Unterkunft, Auto und Flug.",
+  tutorial_settle_title: "Ohne unangenehme Momente ausgleichen", tutorial_settle_desc: "HolidaySplits reduziert die Salden auf klare Zahlungen. Bestätige jede Zahlung und bewahre den Verlauf gemeinsam auf.",
+  tutorial_invite_link: "Einladungslink", tutorial_copy_link: "Link kopieren",
+  social_instagram_alt: "Freunde planen eine gemeinsame Reise auf einer mediterranen Terrasse",
+  social_tiktok_alt: "Freunde planen eine Küstenfahrt neben ihrem Mietwagen",
+  how_group_desc: "Erstelle eine lokale Reise oder teile einen kontogeschützten Raum mit einem einzigen Link.",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

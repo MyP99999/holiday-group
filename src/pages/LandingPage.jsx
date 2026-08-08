@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import BrandButton from "../components/BrandButton";
 import LanguageSelect from "../components/LanguageSelect";
+import LandingTutorial from "../components/LandingTutorial";
+import LandingSocialShowcase from "../components/LandingSocialShowcase";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -183,14 +185,8 @@ export default function LandingPage() {
           <div><span>03</span><strong>{t("proof_currency_title")}</strong><p>{t("proof_currency_desc")}</p></div>
         </section>
 
-        <section className="how-section landing-reveal" id="how-it-works">
-          <div className="how-heading"><h2>{t("landing_how_title")}</h2><p>{t("landing_how_desc")}</p></div>
-          <ol>
-            <li><span>1</span><div><strong>{t("how_group_title")}</strong><p>{t("how_group_desc")}</p></div></li>
-            <li><span>2</span><div><strong>{t("how_spend_title")}</strong><p>{t("how_spend_desc")}</p></div></li>
-            <li><span>3</span><div><strong>{t("how_even_title")}</strong><p>{t("how_even_desc")}</p></div></li>
-          </ol>
-        </section>
+        <LandingTutorial />
+        <LandingSocialShowcase />
       </main>
 
       <footer className="landing-footer landing-reveal">

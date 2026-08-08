@@ -76,6 +76,7 @@ Supabase Auth uses `https://holidaysplits.com` as its Site URL. Keep `http://loc
 - Alternative settlement routes through another member when a direct payment is not possible
 - Confirmed payments that update balances and move into a dated settlement history
 - Existing-person claiming during authenticated room join, with duplicate and already-claimed protection
+- Account-required invitation links that preserve and prefill the room code through registration or sign-in
 - Stable, unique member colors with disambiguating 2–3 letter monograms, photo-ready avatars, and full names on hover or phone long-press
 - Multiple accommodations with total prices, selected participants, room capacities, room assignments, and guest/room split modes
 - Multiple cars with drivers, seat limits, passenger assignment, optional rental prices, and separate rental contributors
@@ -86,6 +87,7 @@ Supabase Auth uses `https://holidaysplits.com` as its Site URL. Keep `http://loc
 - 13 currencies with automatically refreshed daily ECB reference rates, six-hour browser caching, and an offline fallback table
 - English, Romanian, Spanish, French, and German interface languages
 - Responsive desktop workspace and mobile receipt, restaurant, logistics, and chat flows
+- Expandable multilingual landing tutorial with original Instagram and TikTok preview artwork
 - Local and Supabase persistence through interchangeable storage drivers
 
 Receipt upload/camera capture is implemented, while OCR extraction is currently simulated with editable sample data. This keeps the review and contribution workflow usable before an OCR/backend service is connected.

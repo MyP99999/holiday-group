@@ -101,6 +101,10 @@ export default function AuthPage() {
           <div className="auth-room-gate" role="status">
             <strong>{t("account_required_for_room")}</strong>
             <span>{t("room_ready_after_sign_in", { code: roomCode })}</span>
+            <label className="auth-room-code-preview">
+              <span>{t("room_code")}</span>
+              <input value={roomCode} readOnly aria-label={t("room_code")} />
+            </label>
           </div>
         )}
         {recovery ? (

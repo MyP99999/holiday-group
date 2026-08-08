@@ -14,6 +14,7 @@ import { useLanguage } from "../context/LanguageContext";
 import LanguageSelect from "../components/LanguageSelect";
 import BrandButton from "../components/BrandButton";
 import { unreadBadge, unreadMessages } from "../utils/chatNotifications";
+import { sharedRoomInviteUrl } from "../utils/roomAccess";
 
 const navItems = [
   { to: "people", labelKey: "overview", desktop: true },
@@ -26,15 +27,15 @@ const navItems = [
   { to: "chat", labelKey: "group_chat", mobileKey: "chat", icon: LuMessageCircle },
 ];
 
-export default function AppLayout({ driver, currentMemberId, roomCode, sessionName, notificationKey, backTo = "/", guest = false, ownerMode = false }) {
+export default function AppLayout({ driver, currentMemberId, roomCode, sessionName, notificationKey, backTo = "/", ownerMode = false }) {
   return (
     <AppProvider driver={driver} currentMemberId={currentMemberId} ownerMode={ownerMode}>
-      <AppLayoutContent roomCode={roomCode} sessionName={sessionName} notificationKey={notificationKey} backTo={backTo} guest={guest} />
+      <AppLayoutContent roomCode={roomCode} sessionName={sessionName} notificationKey={notificationKey} backTo={backTo} />
     </AppProvider>
   );
 }
 
-function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo, guest }) {
+function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -70,7 +71,7 @@ function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo, gues
   const copyCode = async () => {
     if (!roomCode) return;
     try {
-      await navigator.clipboard.writeText(roomCode);
+      await navigator.clipboard.writeText(sharedRoomInviteUrl(window.location.origin, roomCode));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -102,7 +103,7 @@ function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo, gues
             {syncError && <span className="sync-status sync-error" title={syncError}>Sync needs attention</span>}
             {roomCode ? (
               <>
-                <span>{guest ? t("guest_room") : t("shared_room")} · {roomCode}</span>
+                <span>{t("shared_room")} · {roomCode}</span>
                 <button onClick={copyCode}>{copied ? t("invite_copied") : t("copy_invite")}</button>
               </>
             ) : (

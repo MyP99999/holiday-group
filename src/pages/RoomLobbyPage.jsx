@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PersonAvatar from "../components/PersonAvatar";
 import BrandButton from "../components/BrandButton";
 import { useAuth } from "../context/AuthContext";
@@ -10,14 +10,18 @@ import {
   listOnlineRooms,
   previewOnlineRoom,
 } from "../storage/supabaseDriver";
+import { normalizeRoomCode } from "../utils/roomAccess";
 
 export default function RoomLobbyPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
+  const requestedRoomCode = normalizeRoomCode(searchParams.get("room"));
+  const autoOpenedRoom = useRef("");
   const [rooms, setRooms] = useState([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [tripName, setTripName] = useState("");
-  const [joinCode, setJoinCode] = useState("");
+  const [joinCode, setJoinCode] = useState(requestedRoomCode);
   const [joinName, setJoinName] = useState(user?.name || "");
   const [roomPreview, setRoomPreview] = useState(null);
   const [selectedPersonId, setSelectedPersonId] = useState("");
@@ -49,8 +53,8 @@ export default function RoomLobbyPage() {
     }
   };
 
-  const findRoom = async () => {
-    const code = joinCode.trim().toUpperCase();
+  const findRoom = useCallback(async (requestedCode) => {
+    const code = normalizeRoomCode(typeof requestedCode === "string" ? requestedCode : joinCode);
     if (code.length !== 6) {
       setError("Enter the full 6-character room code.");
       return;
@@ -71,7 +75,13 @@ export default function RoomLobbyPage() {
     } finally {
       setBusy("");
     }
-  };
+  }, [joinCode, user?.name]);
+
+  useEffect(() => {
+    if (requestedRoomCode.length !== 6 || autoOpenedRoom.current === requestedRoomCode) return;
+    autoOpenedRoom.current = requestedRoomCode;
+    findRoom(requestedRoomCode);
+  }, [findRoom, requestedRoomCode]);
 
   const claimPerson = async () => {
     if (!selectedPerson) return;

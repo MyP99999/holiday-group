@@ -20,10 +20,9 @@ npm run build
 ## Product modes
 
 - **Local trip:** no account; each named trip is stored in this browser.
-- **Guest room:** no account; a room code is generated and stored in this browser.
-- **Account room:** Supabase email/password or Google authentication with database persistence and realtime room updates.
+- **Shared room:** a free Supabase email/password or Google account is required, with database persistence and realtime room updates.
 
-An account user can claim an unclaimed person that the organizer already added or join with a new trip-specific display name. The creator becomes the first admin. The no-account guest mode remains intentionally local until anonymous remote rooms are given their own abuse controls and retention policy.
+An account user can claim an unclaimed person that the organizer already added or join with a new trip-specific display name. The creator becomes the first admin. Legacy guest links redirect to the account flow and preserve the room code so the invitation can continue after sign-in.
 
 ## Supabase setup
 
@@ -44,7 +43,7 @@ For production email confirmations and password recovery, configure a custom SMT
 
 ## Vercel deployment
 
-The app is configured as a Create React App single-page application. `vercel.json` sends direct browser requests such as `/online` and `/guest` to `index.html`, where React Router handles them.
+The app is configured as a Create React App single-page application. `vercel.json` sends direct browser requests such as `/online` to `index.html`, where React Router handles them. Legacy `/guest` URLs are compatibility redirects into account creation.
 
 - Production: <https://holidaysplits.com>
 - Vercel project: <https://vercel.com/myp99999s-projects/holiday-group>
@@ -76,7 +75,7 @@ Supabase Auth uses `https://holidaysplits.com` as its Site URL. Keep `http://loc
 - Settlement minimization across equal and custom splits
 - Alternative settlement routes through another member when a direct payment is not possible
 - Confirmed payments that update balances and move into a dated settlement history
-- Existing-person claiming during guest join, with duplicate and already-claimed protection
+- Existing-person claiming during authenticated room join, with duplicate and already-claimed protection
 - Stable, unique member colors with disambiguating 2–3 letter monograms, photo-ready avatars, and full names on hover or phone long-press
 - Multiple accommodations with total prices, selected participants, room capacities, room assignments, and guest/room split modes
 - Multiple cars with drivers, seat limits, passenger assignment, optional rental prices, and separate rental contributors
@@ -101,12 +100,12 @@ src/
   context/          App, authentication, and language state
   layouts/          Responsive trip workspace shell
   pages/            Landing, lobbies, expenses, scan, restaurant, settle, logistics, chat
-  storage/          Local session/room and Supabase driver adapters
+  storage/          Local session and Supabase room driver adapters
   constants.js      Currency metadata and reference values
   utils.js          Conversion, shares, balances, and settlement helpers
 ```
 
-The UI reads and writes through a small driver contract (`read`, `write`, `subscribe`). Shared trip state contains people/roles and claim status, expenses, completed settlement payments, accommodations, vehicles, comments, chat messages, and payment-route preferences. Supabase account rooms use authenticated RPCs and realtime subscriptions; local and guest modes keep the same page-level workflows with browser storage.
+The UI reads and writes through a small driver contract (`read`, `write`, `subscribe`). Shared trip state contains people/roles and claim status, expenses, completed settlement payments, accommodations, vehicles, comments, chat messages, and payment-route preferences. Supabase rooms use authenticated RPCs and realtime subscriptions; local trips keep the same page-level workflows with browser storage.
 
 Design references generated for this redesign are kept in `design-references/`. The production landing image is in `public/images/`.
 

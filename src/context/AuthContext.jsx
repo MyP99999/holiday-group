@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const register = async (name, email, password) => {
+  const register = async (name, email, password, { redirectTo } = {}) => {
     if (!name.trim() || !email.trim() || password.length < 6) {
       throw new Error("Please fill all fields (password min 6 chars)");
     }
@@ -88,17 +88,17 @@ export function AuthProvider({ children }) {
       password,
       options: {
         data: { full_name: name.trim() },
-        emailRedirectTo: `${window.location.origin}/online/lobby`,
+        emailRedirectTo: redirectTo || `${window.location.origin}/online/lobby`,
       },
     });
     if (error) throw error;
     return { ...data, needsEmailConfirmation: !data.session };
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async ({ redirectTo } = {}) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/online/lobby` },
+      options: { redirectTo: redirectTo || `${window.location.origin}/online/lobby` },
     });
     if (error) throw error;
     return data;

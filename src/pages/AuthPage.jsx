@@ -1,19 +1,24 @@
 import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { LuArrowLeft } from "react-icons/lu";
 import { FaGoogle } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { normalizeRoomCode, sharedRoomLobbyPath } from "../utils/roomAccess";
 import { googleAuthEnabled } from "../lib/supabase";
 import BrandButton from "../components/BrandButton";
 import LanguageSelect from "../components/LanguageSelect";
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useLanguage();
   const { user, loading: authLoading, login, register, loginWithGoogle, requestPasswordReset } = useAuth();
+  const roomCode = normalizeRoomCode(searchParams.get("room"));
+  const destination = sharedRoomLobbyPath(roomCode);
+  const authRedirectUrl = `${window.location.origin}${destination}`;
 
-  const [tab, setTab] = useState("login");
+  const [tab, setTab] = useState(searchParams.get("mode") === "register" ? "register" : "login");
   const [recovery, setRecovery] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,7 +28,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   if (authLoading) return <div className="app-loading"><span />{t("checking_session")}</div>;
-  if (user) return <Navigate to="/online/lobby" replace />;
+  if (user) return <Navigate to={destination} replace />;
 
   const resetFeedback = () => {
     setError("");
@@ -51,14 +56,14 @@ export default function AuthPage() {
         setMessage(t("reset_link_sent_generic"));
       } else if (tab === "login") {
         await login(email, password);
-        navigate("/online/lobby");
+        navigate(destination);
       } else {
-        const result = await register(name, email, password);
+        const result = await register(name, email, password, { redirectTo: authRedirectUrl });
         if (result.needsEmailConfirmation) {
           setMessage(t("confirm_email_message"));
           setTab("login");
         } else {
-          navigate("/online/lobby");
+          navigate(destination);
         }
       }
     } catch (err) {
@@ -71,7 +76,7 @@ export default function AuthPage() {
   const handleGoogle = async () => {
     resetFeedback();
     try {
-      await loginWithGoogle();
+      await loginWithGoogle({ redirectTo: authRedirectUrl });
     } catch (err) {
       setError(err.message);
     }
@@ -92,6 +97,12 @@ export default function AuthPage() {
       </div>
 
       <div className="auth-card">
+        {roomCode && (
+          <div className="auth-room-gate" role="status">
+            <strong>{t("account_required_for_room")}</strong>
+            <span>{t("room_ready_after_sign_in", { code: roomCode })}</span>
+          </div>
+        )}
         {recovery ? (
           <div className="auth-recovery-heading">
             <h1>{t("forgot_password")}</h1>

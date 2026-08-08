@@ -1,10 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { useMemo } from "react";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { CurrencyRatesProvider } from "./context/CurrencyRatesContext";
-import { getRoomIdentity, localStorageDriver } from "./storage/localStorageDriver";
 import { supabaseRoomDriver } from "./storage/supabaseDriver";
 import { sessionDriver, getSession } from "./storage/sessionsStore";
 
@@ -14,7 +13,6 @@ import OfflineSessionsPage from "./pages/OfflineSessionsPage";
 import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
 import RoomLobbyPage from "./pages/RoomLobbyPage";
-import GuestLobbyPage from "./pages/GuestLobbyPage";
 import PeoplePage from "./pages/PeoplePage";
 import MemberProfilePage from "./pages/MemberProfilePage";
 import ExpensesPage from "./pages/ExpensesPage";
@@ -24,14 +22,25 @@ import SettlePage from "./pages/SettlePage";
 import PlanPage from "./pages/PlanPage";
 import DecisionsPage from "./pages/DecisionsPage";
 import ChatPage from "./pages/ChatPage";
+import { normalizeRoomCode, sharedRoomAuthPath } from "./utils/roomAccess";
 
 import "./App.css";
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="app-loading"><span />Checking your sessionâ€¦</div>;
-  if (!user) return <Navigate to="/online" replace />;
+  if (!user) {
+    const roomCode = normalizeRoomCode(location.pathname.match(/^\/online\/room\/([^/]+)/i)?.[1]);
+    const destination = roomCode ? sharedRoomAuthPath(roomCode) : "/online";
+    return <Navigate to={destination} replace />;
+  }
   return children;
+}
+
+function LegacyGuestRedirect() {
+  const { roomId = "" } = useParams();
+  return <Navigate to={sharedRoomAuthPath(roomId)} replace />;
 }
 
 function OfflineLayout() {
@@ -46,14 +55,6 @@ function OnlineRoomLayout() {
   const { roomId } = useParams();
   const driver = useMemo(() => supabaseRoomDriver(roomId), [roomId]);
   return <AppLayout key={roomId} driver={driver} roomCode={roomId} notificationKey={`online:${roomId}`} backTo="/online/lobby" />;
-}
-
-function GuestRoomLayout() {
-  const { roomId } = useParams();
-  const driver = useMemo(() => localStorageDriver(roomId), [roomId]);
-  if (!driver.exists()) return <Navigate to="/guest" replace />;
-  const room = driver.read();
-  return <AppLayout key={roomId} driver={driver} currentMemberId={getRoomIdentity(roomId)} roomCode={roomId} notificationKey={`guest:${roomId}`} sessionName={room?.tripName} backTo="/guest" guest />;
 }
 
 export default function App() {
@@ -80,20 +81,9 @@ export default function App() {
             <Route path="chat" element={<ChatPage />} />
           </Route>
 
-          {/* Guest rooms — no account required. Uses the same driver contract Supabase can replace. */}
-          <Route path="/guest" element={<GuestLobbyPage />} />
-          <Route path="/guest/room/:roomId" element={<GuestRoomLayout />}>
-            <Route index element={<Navigate to="people" replace />} />
-            <Route path="people" element={<PeoplePage />} />
-            <Route path="people/:personId" element={<MemberProfilePage />} />
-            <Route path="expenses" element={<ExpensesPage />} />
-            <Route path="scan" element={<ScanPage />} />
-            <Route path="restaurant" element={<RestaurantPage />} />
-            <Route path="settle" element={<SettlePage />} />
-            <Route path="plan" element={<PlanPage />} />
-            <Route path="decisions" element={<DecisionsPage />} />
-            <Route path="chat" element={<ChatPage />} />
-          </Route>
+          {/* Old guest links now continue through authenticated shared rooms. */}
+          <Route path="/guest/room/:roomId/*" element={<LegacyGuestRedirect />} />
+          <Route path="/guest/*" element={<LegacyGuestRedirect />} />
 
           {/* Online — auth-gated rooms */}
           <Route path="/online" element={<AuthPage />} />

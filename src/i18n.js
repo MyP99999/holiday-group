@@ -438,6 +438,37 @@ Object.assign(de, {
   payment_method_bizum: "Bizum", payment_method_bank_transfer: "Banküberweisung", payment_method_cash: "Barzahlung", payment_method_other: "Andere",
 });
 
+Object.assign(en, {
+  open_guest_room: "Create or join a room",
+  no_account_choice: "Local trips stay on this device. Shared rooms require a free account.",
+  account_required_for_room: "An account is required for shared rooms.",
+  room_ready_after_sign_in: "Create an account or sign in to continue to room {code}.",
+});
+Object.assign(ro, {
+  open_guest_room: "Creează sau intră într-o cameră",
+  no_account_choice: "Excursiile locale rămân pe acest dispozitiv. Camerele partajate necesită un cont gratuit.",
+  account_required_for_room: "Pentru camerele partajate este necesar un cont.",
+  room_ready_after_sign_in: "Creează un cont sau autentifică-te pentru a continua în camera {code}.",
+});
+Object.assign(es, {
+  open_guest_room: "Crear o unirse a una sala",
+  no_account_choice: "Los viajes locales permanecen en este dispositivo. Las salas compartidas requieren una cuenta gratuita.",
+  account_required_for_room: "Se necesita una cuenta para las salas compartidas.",
+  room_ready_after_sign_in: "Crea una cuenta o inicia sesión para continuar a la sala {code}.",
+});
+Object.assign(fr, {
+  open_guest_room: "Créer ou rejoindre un salon",
+  no_account_choice: "Les voyages locaux restent sur cet appareil. Les salons partagés nécessitent un compte gratuit.",
+  account_required_for_room: "Un compte est requis pour les salons partagés.",
+  room_ready_after_sign_in: "Créez un compte ou connectez-vous pour accéder au salon {code}.",
+});
+Object.assign(de, {
+  open_guest_room: "Raum erstellen oder beitreten",
+  no_account_choice: "Lokale Reisen bleiben auf diesem Gerät. Geteilte Räume erfordern ein kostenloses Konto.",
+  account_required_for_room: "Für geteilte Räume ist ein Konto erforderlich.",
+  room_ready_after_sign_in: "Erstelle ein Konto oder melde dich an, um Raum {code} zu öffnen.",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

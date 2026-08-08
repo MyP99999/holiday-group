@@ -37,7 +37,7 @@ export function getSession(id) {
   return getSessions().find((s) => s.id === id) || null;
 }
 
-// Storage driver for an offline session — same interface as localStorageDriver
+// Storage driver for an offline session — same interface as the Supabase room driver
 export function sessionDriver(sessionId) {
   const key = DATA_PREFIX + sessionId;
   return {

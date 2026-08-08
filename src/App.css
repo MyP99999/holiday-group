@@ -818,6 +818,9 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .auth-brand span { font-size: 38px; }
 .auth-card { width: min(100%, 440px); }
 .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; margin-bottom: 15px; border-radius: 9px; background: #f3f0eb; }
+.auth-room-gate { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; padding: 14px 16px; border: 1px solid #cbded1; border-radius: 10px; background: var(--sage-wash); color: #365842; }
+.auth-room-gate strong { font-size: 11px; }
+.auth-room-gate span { font-size: 10px; line-height: 1.5; }
 .auth-tab { min-height: 40px; border: 0; border-radius: 7px; background: transparent; cursor: pointer; font-weight: 700; }
 .auth-tab.active { background: #fff; box-shadow: 0 2px 8px rgba(20,25,35,.07); }
 .google-btn { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 9px; background: #fff; cursor: pointer; }

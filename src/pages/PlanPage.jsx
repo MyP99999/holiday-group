@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
@@ -8,52 +8,24 @@ import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
 import { createId } from "../storage/tripState";
 import { convert, fmt } from "../utils";
+import {
+  buildLogisticsExpenses,
+  getFlightShares,
+  getOtherCostShares,
+  getRentalShares,
+  getStayShares,
+  logisticsObligations,
+  uniqueIds,
+} from "../utils/logisticsCosts";
 
-const emptyStay = { name: "", location: "", nights: 1, price: "", currency: "EUR", splitMode: "people" };
+const emptyStay = { name: "", location: "", nights: 1, price: "", currency: "EUR", paidById: "", splitMode: "people" };
 const emptyCar = { name: "", seats: 5 };
 const emptyFlight = {
   airline: "", flightNumber: "", from: "", to: "",
   departureDate: "", departureTime: "", arrivalDate: "", arrivalTime: "",
-  price: "", currency: "EUR",
+  price: "", currency: "EUR", paidById: "",
 };
-
-function uniqueIds(ids = []) {
-  return [...new Set(ids.map(String))];
-}
-
-function getStayShares(stay) {
-  const total = Number(stay.price) || 0;
-  const shares = {};
-  if (stay.splitMode === "people") {
-    const participants = uniqueIds(stay.participantIds);
-    if (!participants.length) return shares;
-    participants.forEach((id) => { shares[id] = total / participants.length; });
-    return shares;
-  }
-
-  const occupiedRooms = (stay.rooms || []).filter((room) => room.occupantIds?.length);
-  if (!occupiedRooms.length) return shares;
-  const perRoom = total / occupiedRooms.length;
-  occupiedRooms.forEach((room) => {
-    const occupants = uniqueIds(room.occupantIds);
-    occupants.forEach((id) => { shares[id] = (shares[id] || 0) + perRoom / occupants.length; });
-  });
-  return shares;
-}
-
-function getRentalShares(vehicle) {
-  const participants = uniqueIds(vehicle.rentalParticipantIds);
-  const total = Number(vehicle.rentalPrice) || 0;
-  if (!vehicle.rentalEnabled || !participants.length) return {};
-  return Object.fromEntries(participants.map((id) => [id, total / participants.length]));
-}
-
-function getFlightShares(flight) {
-  const participants = uniqueIds(flight.participantIds);
-  const total = Number(flight.price) || 0;
-  if (!participants.length) return {};
-  return Object.fromEntries(participants.map((id) => [id, total / participants.length]));
-}
+const emptyOtherCost = { title: "", amount: "", currency: "EUR", paidById: "" };
 
 function CommentThread({ targetType, targetId }) {
   const { t, locale } = useLanguage();
@@ -87,14 +59,23 @@ export default function PlanPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { rateDate } = useCurrencyRates();
-  const { people, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights } = useApp();
+  const {
+    people, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights,
+    otherCosts, setOtherCosts, logisticsPayments, setLogisticsPayments, settlementPayments,
+    currentMemberId, canManageMembers,
+  } = useApp();
   const [showStayForm, setShowStayForm] = useState(false);
   const [showCarForm, setShowCarForm] = useState(false);
   const [showFlightForm, setShowFlightForm] = useState(false);
+  const [showOtherForm, setShowOtherForm] = useState(false);
   const [stayForm, setStayForm] = useState(emptyStay);
   const [carForm, setCarForm] = useState(emptyCar);
   const [flightForm, setFlightForm] = useState(emptyFlight);
+  const [otherForm, setOtherForm] = useState(emptyOtherCost);
+  const [paymentDraft, setPaymentDraft] = useState(null);
+  const [paymentError, setPaymentError] = useState("");
   const [outputCurrency, setOutputCurrency] = useState("EUR");
+  const defaultPayerId = String(currentMemberId || people[0]?.id || "");
 
   const personName = (id) => people.find((person) => String(person.id) === String(id))?.name || t("unassigned");
   const personById = (id) => people.find((person) => String(person.id) === String(id));
@@ -105,11 +86,20 @@ export default function PlanPage() {
     },
   });
 
+  const logisticsExpenses = useMemo(() => buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts }), [accommodations, vehicles, flights, otherCosts]);
+  const obligations = useMemo(
+    () => logisticsObligations(logisticsExpenses, logisticsPayments, outputCurrency, settlementPayments),
+    [logisticsExpenses, logisticsPayments, settlementPayments, outputCurrency, rateDate]
+  );
+
   const costSummary = useMemo(() => {
-    const rows = Object.fromEntries(people.map((person) => [String(person.id), { stays: 0, rentals: 0, flights: 0 }]));
+    const rows = Object.fromEntries(people.map((person) => [String(person.id), {
+      stays: 0, rentals: 0, flights: 0, others: 0, paid: 0, remaining: 0, payeeIds: [],
+    }]));
     let accommodationTotal = 0;
     let rentalTotal = 0;
     let flightTotal = 0;
+    let otherTotal = 0;
 
     accommodations.forEach((stay) => {
       accommodationTotal += convert(Number(stay.price) || 0, stay.currency, outputCurrency);
@@ -132,8 +122,49 @@ export default function PlanPage() {
       });
     });
 
-    return { rows, accommodationTotal, rentalTotal, flightTotal, grandTotal: accommodationTotal + rentalTotal + flightTotal };
-  }, [people, accommodations, vehicles, flights, outputCurrency, rateDate]);
+    otherCosts.forEach((cost) => {
+      otherTotal += convert(Number(cost.amount) || 0, cost.currency, outputCurrency);
+      Object.entries(getOtherCostShares(cost)).forEach(([id, amount]) => {
+        if (rows[id]) rows[id].others += convert(amount, cost.currency, outputCurrency);
+      });
+    });
+
+    obligations.forEach((obligation) => {
+      const row = rows[obligation.personId];
+      if (!row) return;
+      row.paid += Math.min(obligation.paid, obligation.due);
+      row.remaining += obligation.remaining;
+      if (obligation.remaining > 0.005 && !row.payeeIds.includes(obligation.payeeId)) row.payeeIds.push(obligation.payeeId);
+    });
+
+    return {
+      rows, accommodationTotal, rentalTotal, flightTotal, otherTotal,
+      grandTotal: accommodationTotal + rentalTotal + flightTotal + otherTotal,
+    };
+  }, [people, accommodations, vehicles, flights, otherCosts, obligations, outputCurrency, rateDate]);
+
+  const showFlightAllocation = costSummary.flightTotal > 0.005;
+  const showOtherAllocation = otherCosts.length > 0;
+  const allocationCostColumnCount = 2 + Number(showFlightAllocation) + Number(showOtherAllocation);
+  const allocationGridStyle = {
+    minWidth: `${760 + allocationCostColumnCount * 70}px`,
+    gridTemplateColumns: `minmax(145px, 1.25fr) repeat(${allocationCostColumnCount}, minmax(68px, .55fr)) minmax(82px, .65fr) minmax(74px, .6fr) minmax(82px, .65fr) minmax(105px, .85fr) minmax(105px, .8fr)`,
+  };
+
+  const openStayForm = () => {
+    setStayForm((current) => ({ ...current, paidById: current.paidById || defaultPayerId }));
+    setShowStayForm(true);
+  };
+
+  const openFlightForm = () => {
+    setFlightForm((current) => ({ ...current, paidById: current.paidById || defaultPayerId }));
+    setShowFlightForm(true);
+  };
+
+  const openOtherForm = () => {
+    setOtherForm((current) => ({ ...current, paidById: current.paidById || defaultPayerId }));
+    setShowOtherForm(true);
+  };
 
   const createStay = () => {
     if (!stayForm.name.trim()) return;
@@ -144,12 +175,13 @@ export default function PlanPage() {
       nights: Math.max(1, Number(stayForm.nights) || 1),
       price: Number(stayForm.price) || 0,
       currency: stayForm.currency,
+      paidById: stayForm.paidById || defaultPayerId,
       splitMode: stayForm.splitMode,
       participantIds: [],
       rooms: [],
       createdAt: new Date().toISOString(),
     }]);
-    setStayForm(emptyStay);
+    setStayForm({ ...emptyStay, paidById: defaultPayerId });
     setShowStayForm(false);
   };
 
@@ -216,6 +248,7 @@ export default function PlanPage() {
       rentalEnabled: false,
       rentalPrice: "",
       rentalCurrency: "EUR",
+      rentalPaidById: defaultPayerId,
       rentalParticipantIds: [],
       createdAt: new Date().toISOString(),
     }]);
@@ -274,10 +307,11 @@ export default function PlanPage() {
       airline: flightForm.airline.trim(),
       flightNumber: flightForm.flightNumber.trim().toUpperCase(),
       price: Number(flightForm.price) || 0,
+      paidById: flightForm.paidById || defaultPayerId,
       participantIds: [],
       createdAt: new Date().toISOString(),
     }]);
-    setFlightForm(emptyFlight);
+    setFlightForm({ ...emptyFlight, paidById: defaultPayerId });
     setShowFlightForm(false);
   };
 
@@ -296,12 +330,84 @@ export default function PlanPage() {
     };
   }));
 
+  const createOtherCost = () => {
+    if (!otherForm.title.trim() || !Number(otherForm.amount)) return;
+    setOtherCosts((current) => [...current, {
+      id: createId("other-cost"),
+      title: otherForm.title.trim(),
+      amount: Number(otherForm.amount),
+      currency: otherForm.currency,
+      paidById: otherForm.paidById || defaultPayerId,
+      participantIds: people.map((person) => person.id),
+      createdAt: new Date().toISOString(),
+    }]);
+    setOtherForm({ ...emptyOtherCost, paidById: defaultPayerId });
+    setShowOtherForm(false);
+  };
+
+  const updateOtherCost = (costId, fields) => setOtherCosts((current) => current.map((cost) =>
+    String(cost.id) === String(costId) ? { ...cost, ...fields } : cost
+  ));
+
+  const toggleOtherParticipant = (costId, personId) => setOtherCosts((current) => current.map((cost) => {
+    if (String(cost.id) !== String(costId)) return cost;
+    const selected = cost.participantIds.map(String).includes(String(personId));
+    return {
+      ...cost,
+      participantIds: selected
+        ? cost.participantIds.filter((id) => String(id) !== String(personId))
+        : [...cost.participantIds, personId],
+    };
+  }));
+
+  const openPaymentEditor = (personId) => {
+    if (!canManageMembers) return;
+    const firstObligation = obligations.find((item) => item.personId === String(personId) && item.remaining > 0.005);
+    setPaymentError("");
+    setPaymentDraft({ personId: String(personId), logisticsExpenseId: firstObligation?.logisticsExpenseId || "", amount: "" });
+  };
+
+  const recordLogisticsPayment = () => {
+    if (!canManageMembers || !paymentDraft) return;
+    const obligation = obligations.find((item) =>
+      item.personId === paymentDraft.personId && item.logisticsExpenseId === paymentDraft.logisticsExpenseId
+    );
+    const amount = Number(paymentDraft.amount);
+    if (!obligation || !amount || amount <= 0 || amount - obligation.remaining > 0.01) {
+      setPaymentError(t("payment_amount_invalid"));
+      return;
+    }
+    const from = personById(obligation.personId);
+    const to = personById(obligation.payeeId);
+    setLogisticsPayments((current) => [...current, {
+      id: createId("logistics-payment"),
+      source: "logistics",
+      logisticsExpenseId: obligation.logisticsExpenseId,
+      logisticsType: obligation.logisticsType,
+      logisticsId: obligation.logisticsId,
+      logisticsTitle: obligation.title,
+      fromId: obligation.personId,
+      fromName: from?.name || personName(obligation.personId),
+      fromColor: from?.color || "",
+      toId: obligation.payeeId,
+      toName: to?.name || personName(obligation.payeeId),
+      toColor: to?.color || "",
+      amountEUR: convert(amount, outputCurrency, "EUR"),
+      originalAmount: amount,
+      originalCurrency: outputCurrency,
+      recordedById: currentMemberId || "",
+      paidAt: new Date().toISOString(),
+    }]);
+    setPaymentDraft(null);
+    setPaymentError("");
+  };
+
   return (
     <div className="page-stack logistics-page">
       <PageHeader
         title={t("trip_logistics")}
         description={t("logistics_desc")}
-        actions={<><CurrencySelect value={outputCurrency} onChange={setOutputCurrency} /><button className="button primary" onClick={() => setShowStayForm(true)}>{t("add_accommodation")}</button></>}
+        actions={<><CurrencySelect value={outputCurrency} onChange={setOutputCurrency} /><button className="button primary" onClick={openStayForm}>{t("add_accommodation")}</button></>}
       />
 
       {showStayForm && (
@@ -311,6 +417,7 @@ export default function PlanPage() {
           <label className="field-group"><span className="field-label">{t("nights")}</span><input type="number" min="1" value={stayForm.nights} onChange={(event) => setStayForm((current) => ({ ...current, nights: event.target.value }))} /></label>
           <label className="field-group"><span className="field-label">{t("stay_price")}</span><input type="number" min="0" step="0.01" value={stayForm.price} onChange={(event) => setStayForm((current) => ({ ...current, price: event.target.value }))} placeholder="0.00" /></label>
           <label className="field-group"><span className="field-label">{t("currency")}</span><CurrencySelect value={stayForm.currency} onChange={(currency) => setStayForm((current) => ({ ...current, currency }))} /></label>
+          <label className="field-group"><span className="field-label">{t("payer")}</span><select value={stayForm.paidById} onChange={(event) => setStayForm((current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
           <label className="field-group"><span className="field-label">{t("split_method")}</span><select value={stayForm.splitMode} onChange={(event) => setStayForm((current) => ({ ...current, splitMode: event.target.value }))}><option value="people">{t("split_by_people")}</option><option value="rooms">{t("split_by_rooms")}</option></select></label>
           <button className="button primary" onClick={createStay}>{t("create_stay")}</button>
           <button className="text-link" onClick={() => setShowStayForm(false)}>{t("cancel")}</button>
@@ -319,6 +426,56 @@ export default function PlanPage() {
 
       <div className="logistics-layout logistics-layout-full">
         <div className="logistics-board">
+          <section className="allocation-summary allocation-summary-top">
+            <header><div><h2>{t("planned_split")}</h2><p>{t("planned_split_desc")}</p></div><strong>{fmt(costSummary.grandTotal, outputCurrency)}</strong></header>
+            <div className="allocation-table">
+              <div className="allocation-table-head" style={allocationGridStyle}>
+                <span>{t("people")}</span>
+                <span>{t("stays")}</span>
+                <span>{t("rentals")}</span>
+                {showFlightAllocation && <span>{t("flights")}</span>}
+                {showOtherAllocation && <span>{t("others")}</span>}
+                <span>{t("total")}</span>
+                <span>{t("paid")}</span>
+                <span>{t("left_to_pay")}</span>
+                <span className="allocation-left-cell">{t("pay_to")}</span>
+                <span className="allocation-left-cell">{t("status")}</span>
+              </div>
+              {people.map((person, index) => {
+                const row = costSummary.rows[String(person.id)];
+                const plannedTotal = row.stays + row.rentals + row.flights + row.others;
+                const personObligations = obligations.filter((item) => item.personId === String(person.id) && item.remaining > 0.005);
+                const selectedObligation = paymentDraft?.personId === String(person.id)
+                  ? personObligations.find((item) => item.logisticsExpenseId === paymentDraft.logisticsExpenseId)
+                  : null;
+                return (
+                  <Fragment key={person.id}>
+                    <div className={`allocation-table-row${row.remaining > 0.005 ? " has-amount-due" : plannedTotal > 0 ? " is-fully-settled" : ""}`} style={allocationGridStyle}>
+                      <span><PersonAvatar person={person} people={people} index={index} size="small" /><strong>{person.name}</strong></span>
+                      <span>{fmt(row.stays, outputCurrency)}</span>
+                      <span>{fmt(row.rentals, outputCurrency)}</span>
+                      {showFlightAllocation && <span>{fmt(row.flights, outputCurrency)}</span>}
+                      {showOtherAllocation && <span>{fmt(row.others, outputCurrency)}</span>}
+                      <strong>{fmt(plannedTotal, outputCurrency)}</strong>
+                      <span className="money-positive">{fmt(row.paid, outputCurrency)}</span>
+                      <strong className={`allocation-remaining ${row.remaining > 0.005 ? "money-negative" : "money-muted"}`}>{fmt(row.remaining, outputCurrency)}</strong>
+                      <span className="allocation-payees">{row.payeeIds.length ? row.payeeIds.map(personName).join(", ") : "—"}</span>
+                      <span className="allocation-status">{canManageMembers ? <button className="button secondary table-payment-button" disabled={!personObligations.length} onClick={() => openPaymentEditor(person.id)}>{t("record_payment")}</button> : <small className="read-only-label">{t("read_only")}</small>}</span>
+                    </div>
+                    {paymentDraft?.personId === String(person.id) && canManageMembers && (
+                      <div className="allocation-payment-editor" style={{ minWidth: allocationGridStyle.minWidth }}>
+                        <div><strong>{t("record_payment_for", { name: person.name })}</strong><span>{t("admin_payment_note")}</span></div>
+                        <label><span>{t("cost")}</span><select value={paymentDraft.logisticsExpenseId} onChange={(event) => { setPaymentDraft((current) => ({ ...current, logisticsExpenseId: event.target.value, amount: "" })); setPaymentError(""); }}><option value="">{t("choose_cost")}</option>{personObligations.map((item) => <option key={item.logisticsExpenseId} value={item.logisticsExpenseId}>{item.title} · {t("pay_to")} {personName(item.payeeId)} · {fmt(item.remaining, outputCurrency)}</option>)}</select></label>
+                        <label><span>{t("amount")}</span><input type="number" min="0" max={selectedObligation?.remaining || undefined} step="0.01" value={paymentDraft.amount} onChange={(event) => { setPaymentDraft((current) => ({ ...current, amount: event.target.value })); setPaymentError(""); }} placeholder="0.00" /></label>
+                        <div className="allocation-payment-actions">{paymentError && <p className="form-error">{paymentError}</p>}<button className="text-link" onClick={() => setPaymentDraft(null)}>{t("cancel")}</button><button className="button primary small-button" onClick={recordLogisticsPayment}>{t("confirm_paid")}</button></div>
+                      </div>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </div>
+          </section>
+
           <section className="logistics-section">
             <div className="logistics-section-heading"><div><h2>{t("stays_rooms")}</h2><p>{t("stays_help")}</p></div><strong>{fmt(costSummary.accommodationTotal, outputCurrency)} <span>{t("accommodation_total")}</span></strong></div>
             {accommodations.length ? accommodations.map((stay) => {
@@ -335,6 +492,7 @@ export default function PlanPage() {
 
                   <div className="stay-cost-controls">
                     <label className="field-group"><span className="field-label">{t("stay_price")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={stay.price} onChange={(event) => updateStay(stay.id, (current) => ({ ...current, price: event.target.value }))} /><CurrencySelect value={stay.currency} onChange={(currency) => updateStay(stay.id, (current) => ({ ...current, currency }))} /></div></label>
+                    <label className="field-group"><span className="field-label">{t("payer")}</span><select value={stay.paidById || ""} onChange={(event) => updateStay(stay.id, (current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
                     <div className="stay-split-choice"><span className="field-label">{t("split_method")}</span><div><button className={stay.splitMode === "people" ? "active" : ""} onClick={() => updateStay(stay.id, (current) => ({ ...current, splitMode: "people" }))}>{t("split_by_people")}</button><button className={stay.splitMode === "rooms" ? "active" : ""} onClick={() => updateStay(stay.id, (current) => ({ ...current, splitMode: "rooms" }))}>{t("split_by_rooms")}</button></div></div>
                   </div>
 
@@ -378,7 +536,7 @@ export default function PlanPage() {
                   <CommentThread targetType="accommodation" targetId={stay.id} />
                 </article>
               );
-            }) : <div className="open-empty"><strong>{t("no_stays")}</strong><span>{t("no_stays_desc")}</span><button className="text-link" onClick={() => setShowStayForm(true)}>{t("add_stay")}</button></div>}
+            }) : <div className="open-empty"><strong>{t("no_stays")}</strong><span>{t("no_stays_desc")}</span><button className="text-link" onClick={openStayForm}>{t("add_stay")}</button></div>}
           </section>
 
           <section className="logistics-section cars-section">
@@ -412,6 +570,7 @@ export default function PlanPage() {
                       <>
                         <div className="rental-cost-row">
                           <label className="field-group"><span className="field-label">{t("rental_price")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={vehicle.rentalPrice} onChange={(event) => setVehicles((current) => current.map((item) => item.id === vehicle.id ? { ...item, rentalPrice: event.target.value } : item))} placeholder="0.00" /><CurrencySelect value={vehicle.rentalCurrency} onChange={(rentalCurrency) => setVehicles((current) => current.map((item) => item.id === vehicle.id ? { ...item, rentalCurrency } : item))} /></div></label>
+                          <label className="field-group"><span className="field-label">{t("payer")}</span><select value={vehicle.rentalPaidById || ""} onChange={(event) => setVehicles((current) => current.map((item) => item.id === vehicle.id ? { ...item, rentalPaidById: event.target.value } : item))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
                           <div><strong>{vehicle.rentalParticipantIds.length ? fmt((Number(vehicle.rentalPrice) || 0) / vehicle.rentalParticipantIds.length, vehicle.rentalCurrency) : fmt(0, vehicle.rentalCurrency)}</strong><span>{t("per_participant")}</span></div>
                         </div>
                         <div className="participation-block rental-participation">
@@ -434,7 +593,7 @@ export default function PlanPage() {
           <section className="logistics-section flights-section">
             <div className="logistics-section-heading">
               <div><h2>{t("flights")}</h2><p>{t("flights_help")}</p></div>
-              <div className="section-heading-actions"><strong>{fmt(costSummary.flightTotal, outputCurrency)}<span>{t("flight_total")}</span></strong><button className="button secondary small-button" onClick={() => setShowFlightForm(true)}>{t("add_flight")}</button></div>
+              <div className="section-heading-actions"><strong>{fmt(costSummary.flightTotal, outputCurrency)}<span>{t("flight_total")}</span></strong><button className="button secondary small-button" onClick={openFlightForm}>{t("add_flight")}</button></div>
             </div>
 
             {showFlightForm && (
@@ -445,6 +604,7 @@ export default function PlanPage() {
                 <label><span>{t("flight_number")}</span><input value={flightForm.flightNumber} onChange={(event) => setFlightForm((current) => ({ ...current, flightNumber: event.target.value }))} placeholder="RO 421" /></label>
                 <label><span>{t("departure")}</span><input type="date" value={flightForm.departureDate} onChange={(event) => setFlightForm((current) => ({ ...current, departureDate: event.target.value }))} /></label>
                 <label><span>{t("total_fare")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={flightForm.price} onChange={(event) => setFlightForm((current) => ({ ...current, price: event.target.value }))} placeholder="0.00" /><CurrencySelect value={flightForm.currency} onChange={(currency) => setFlightForm((current) => ({ ...current, currency }))} /></div></label>
+                <label><span>{t("payer")}</span><select value={flightForm.paidById} onChange={(event) => setFlightForm((current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
                 <button className="button primary small-button" onClick={createFlight}>{t("create_flight")}</button>
                 <button className="text-link" onClick={() => setShowFlightForm(false)}>{t("cancel")}</button>
               </div>
@@ -465,6 +625,7 @@ export default function PlanPage() {
                     <label><span>{t("departure")}</span><div className="date-time-fields"><input type="date" value={flight.departureDate} onChange={(event) => updateFlight(flight.id, { departureDate: event.target.value })} /><input type="time" value={flight.departureTime} onChange={(event) => updateFlight(flight.id, { departureTime: event.target.value })} /></div></label>
                     <label><span>{t("arrival")}</span><div className="date-time-fields"><input type="date" value={flight.arrivalDate} onChange={(event) => updateFlight(flight.id, { arrivalDate: event.target.value })} /><input type="time" value={flight.arrivalTime} onChange={(event) => updateFlight(flight.id, { arrivalTime: event.target.value })} /></div></label>
                     <label><span>{t("total_fare")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={flight.price} onChange={(event) => updateFlight(flight.id, { price: event.target.value })} /><CurrencySelect value={flight.currency} onChange={(currency) => updateFlight(flight.id, { currency })} /></div></label>
+                    <label><span>{t("payer")}</span><select value={flight.paidById || ""} onChange={(event) => updateFlight(flight.id, { paidById: event.target.value })}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
                   </div>
 
                   <div className="participation-block flight-participation">
@@ -481,24 +642,47 @@ export default function PlanPage() {
             }) : !showFlightForm && <div className="open-empty"><strong>{t("no_flights")}</strong><span>{t("no_flights_desc")}</span></div>}
           </section>
 
-          <section className="allocation-summary">
-            <header><div><h2>{t("planned_split")}</h2><p>{t("planned_split_desc")}</p></div><strong>{fmt(costSummary.grandTotal, outputCurrency)}</strong></header>
-            <div className="allocation-table">
-              <div className="allocation-table-head"><span>{t("people")}</span><span>{t("stays")}</span><span>{t("rentals")}</span><span>{t("flights")}</span><span>{t("total")}</span></div>
-              {people.map((person, index) => {
-                const row = costSummary.rows[String(person.id)];
-                return (
-                  <div className="allocation-table-row" key={person.id}>
-                    <span><PersonAvatar person={person} people={people} index={index} size="small" /><strong>{person.name}</strong></span>
-                    <span>{fmt(row.stays, outputCurrency)}</span>
-                    <span>{fmt(row.rentals, outputCurrency)}</span>
-                    <span>{fmt(row.flights, outputCurrency)}</span>
-                    <strong>{fmt(row.stays + row.rentals + row.flights, outputCurrency)}</strong>
-                  </div>
-                );
-              })}
+          <section className="logistics-section other-costs-section">
+            <div className="logistics-section-heading">
+              <div><h2>{t("other_costs")}</h2><p>{t("other_costs_help")}</p></div>
+              <div className="section-heading-actions"><strong>{fmt(costSummary.otherTotal, outputCurrency)}<span>{t("other_total")}</span></strong><button className="button secondary small-button" onClick={openOtherForm}>{t("add_other_cost")}</button></div>
             </div>
+
+            {showOtherForm && (
+              <div className="other-cost-creator">
+                <label><span>{t("title")}</span><input autoFocus value={otherForm.title} onChange={(event) => setOtherForm((current) => ({ ...current, title: event.target.value }))} placeholder={t("other_cost_example")} /></label>
+                <label><span>{t("amount")}</span><input type="number" min="0" step="0.01" value={otherForm.amount} onChange={(event) => setOtherForm((current) => ({ ...current, amount: event.target.value }))} placeholder="0.00" /></label>
+                <label><span>{t("currency")}</span><CurrencySelect value={otherForm.currency} onChange={(currency) => setOtherForm((current) => ({ ...current, currency }))} /></label>
+                <label><span>{t("payer")}</span><select value={otherForm.paidById} onChange={(event) => setOtherForm((current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+                <button className="button primary small-button" onClick={createOtherCost}>{t("add")}</button>
+                <button className="text-link" onClick={() => setShowOtherForm(false)}>{t("cancel")}</button>
+              </div>
+            )}
+
+            {otherCosts.length ? otherCosts.map((cost) => {
+              const costShares = getOtherCostShares(cost);
+              return (
+                <article className="other-cost-block" key={cost.id}>
+                  <header><div><span>{t("other_cost")}</span><h3>{cost.title}</h3></div><button className="row-action" onClick={() => setOtherCosts((current) => current.filter((item) => item.id !== cost.id))}>{t("remove")}</button></header>
+                  <div className="other-cost-grid">
+                    <label><span>{t("title")}</span><input value={cost.title} onChange={(event) => updateOtherCost(cost.id, { title: event.target.value })} /></label>
+                    <label><span>{t("amount")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={cost.amount} onChange={(event) => updateOtherCost(cost.id, { amount: event.target.value })} /><CurrencySelect value={cost.currency} onChange={(currency) => updateOtherCost(cost.id, { currency })} /></div></label>
+                    <label><span>{t("payer")}</span><select value={cost.paidById || ""} onChange={(event) => updateOtherCost(cost.id, { paidById: event.target.value })}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+                  </div>
+                  <div className="participation-block">
+                    <div><strong>{t("shared_with")}</strong><span>{t("other_participants_help")}</span></div>
+                    <div className="participant-buttons">{people.map((person) => {
+                      const selected = cost.participantIds.map(String).includes(String(person.id));
+                      return <button className={selected ? "selected" : ""} key={person.id} onClick={() => toggleOtherParticipant(cost.id, person.id)}><PersonAvatar person={person} people={people} index={personIndex(person.id)} size="small" inControl />{person.name}</button>;
+                    })}</div>
+                  </div>
+                  <div className="split-preview"><strong>{t("other_split")}</strong><div>{Object.keys(costShares).length ? Object.entries(costShares).map(([id, share]) => <span key={id}><b>{personName(id)}</b>{fmt(share, cost.currency)}</span>) : <small>{t("select_participants_first")}</small>}</div></div>
+                  <CommentThread targetType="other" targetId={cost.id} />
+                </article>
+              );
+            }) : !showOtherForm && <div className="open-empty"><strong>{t("no_other_costs")}</strong><span>{t("no_other_costs_desc")}</span></div>}
           </section>
+
           <p className="auto-save-note">{t("logistics_saved")}</p>
         </div>
 

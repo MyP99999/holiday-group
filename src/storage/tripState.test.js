@@ -25,4 +25,18 @@ describe("member payment details", () => {
       paymentNote: "Use the trip name as reference",
     });
   });
+
+  it("adds defaults for logistics payers, custom costs and payment history", () => {
+    const state = normalizeTripState({
+      accommodations: [{ id: "stay", rooms: [] }],
+      vehicles: [{ id: "car" }],
+      flights: [{ id: "flight" }],
+    });
+
+    expect(state.accommodations[0].paidById).toBe("");
+    expect(state.vehicles[0].rentalPaidById).toBe("");
+    expect(state.flights[0].paidById).toBe("");
+    expect(state.otherCosts).toEqual([]);
+    expect(state.logisticsPayments).toEqual([]);
+  });
 });

@@ -9,24 +9,31 @@ import { calculateBalances, convert, fmt } from "../utils";
 import { createId, nextPersonColor } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
+import { buildLogisticsExpenses } from "../utils/logisticsCosts";
 
 export default function PeoplePage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { rates, rateDate, status: rateStatus, isRefreshing, refreshRates } = useCurrencyRates();
-  const { people, setPeople, expenses, settlementPayments, currentMemberId, canManageMembers } = useApp();
+  const {
+    people, setPeople, expenses, accommodations, vehicles, flights, otherCosts,
+    settlementPayments, logisticsPayments, currentMemberId, canManageMembers,
+  } = useApp();
   const [name, setName] = useState("");
   const [displayCurrency, setDisplayCurrency] = useState("EUR");
-  const balances = useMemo(() => calculateBalances(people, expenses, settlementPayments), [people, expenses, settlementPayments, rateDate]);
+  const logisticsExpenses = useMemo(() => buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts }), [accommodations, vehicles, flights, otherCosts]);
+  const allExpenses = useMemo(() => [...expenses, ...logisticsExpenses], [expenses, logisticsExpenses]);
+  const allPayments = useMemo(() => [...settlementPayments, ...logisticsPayments], [settlementPayments, logisticsPayments]);
+  const balances = useMemo(() => calculateBalances(people, allExpenses, allPayments), [people, allExpenses, allPayments, rateDate]);
   const totalSpent = useMemo(
-    () => expenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
-    [expenses, displayCurrency, rateDate]
+    () => allExpenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
+    [allExpenses, displayCurrency, rateDate]
   );
-  const personHasRecords = (id) => expenses.some((expense) =>
+  const personHasRecords = (id) => allExpenses.some((expense) =>
     String(expense.paidById) === String(id) ||
     (expense.participantIds || []).some((personId) => String(personId) === String(id)) ||
     Object.keys(expense.shares || {}).includes(String(id))
-  ) || settlementPayments.some((payment) =>
+  ) || allPayments.some((payment) =>
     [payment.fromId, payment.toId, payment.viaId].some((personId) => String(personId) === String(id))
   );
 

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import PageHeader from "../components/PageHeader";
+import { Navigate, useNavigate } from "react-router-dom";
 import CurrencySelect from "../components/CurrencySelect";
 import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
@@ -14,7 +13,7 @@ const sampleItems = [
   { id: "service", description: "Service", amount: 5.1, participantIds: [] },
 ];
 
-export default function ScanPage() {
+export function ScanExpenseForm() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const inputRef = useRef(null);
@@ -83,9 +82,7 @@ export default function ScanPage() {
   const total = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
   return (
-    <div className="page-stack compact-page">
-      <PageHeader title={t("scan_title")} description={t("scan_desc")} />
-
+    <div className="expense-tool-content">
       {!people.length ? (
         <section className="surface-panel empty-copy"><h2>{t("add_group_first")}</h2><p>{t("receipt_people_desc")}</p><button className="button primary" onClick={() => navigate("../people")}>{t("add_person")}</button></section>
       ) : (
@@ -130,4 +127,8 @@ export default function ScanPage() {
       )}
     </div>
   );
+}
+
+export default function ScanPage() {
+  return <Navigate to="../expenses" replace state={{ expenseMode: "scan" }} />;
 }

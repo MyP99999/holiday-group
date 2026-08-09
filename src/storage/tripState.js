@@ -56,11 +56,13 @@ export function createDefaultTripState(tripName = "Untitled trip", creatorName =
     accommodations: [],
     vehicles: [],
     flights: [],
+    otherCosts: [],
     polls: [],
     comments: [],
     chatMessages: [],
     paymentRoutes: {},
     settlementPayments: [],
+    logisticsPayments: [],
   };
 }
 
@@ -100,6 +102,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
       return {
         ...stay,
         price: stay.price ?? legacyRoomTotal,
+        paidById: stay.paidById || "",
         splitMode: stay.splitMode === "people" ? "people" : "rooms",
         participantIds: Array.isArray(stay.participantIds) ? stay.participantIds : roomParticipants,
         rooms,
@@ -111,6 +114,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
       rentalEnabled: Boolean(vehicle.rentalEnabled),
       rentalPrice: vehicle.rentalPrice ?? "",
       rentalCurrency: vehicle.rentalCurrency || "EUR",
+      rentalPaidById: vehicle.rentalPaidById || "",
       rentalParticipantIds: Array.isArray(vehicle.rentalParticipantIds) ? vehicle.rentalParticipantIds : [],
     })) : [],
     flights: Array.isArray(source.flights) ? source.flights.map((flight) => ({
@@ -125,7 +129,16 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
       arrivalTime: flight.arrivalTime || "",
       price: flight.price ?? "",
       currency: flight.currency || "EUR",
+      paidById: flight.paidById || "",
       participantIds: Array.isArray(flight.participantIds) ? flight.participantIds : [],
+    })) : [],
+    otherCosts: Array.isArray(source.otherCosts) ? source.otherCosts.map((cost) => ({
+      ...cost,
+      title: cost.title || "Other cost",
+      amount: cost.amount ?? "",
+      currency: cost.currency || "EUR",
+      paidById: cost.paidById || "",
+      participantIds: Array.isArray(cost.participantIds) ? cost.participantIds : [],
     })) : [],
     polls: Array.isArray(source.polls) ? source.polls.map((poll, pollIndex) => ({
       ...poll,
@@ -149,5 +162,6 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
     chatMessages: Array.isArray(source.chatMessages) ? source.chatMessages : [],
     paymentRoutes: source.paymentRoutes && typeof source.paymentRoutes === "object" ? source.paymentRoutes : {},
     settlementPayments: Array.isArray(source.settlementPayments) ? source.settlementPayments : [],
+    logisticsPayments: Array.isArray(source.logisticsPayments) ? source.logisticsPayments : [],
   };
 }

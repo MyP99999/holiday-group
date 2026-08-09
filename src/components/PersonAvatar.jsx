@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { personColor } from "../utils";
 import { useLanguage } from "../context/LanguageContext";
+import { isMemberClaimed } from "../utils/memberClaims";
 
 function normalizeName(name = "") {
   return name
@@ -55,6 +56,8 @@ export default function PersonAvatar({ person, people = [], index = 0, size = "d
   const hideTimer = useRef(null);
   const longPressed = useRef(false);
   const monogram = useMemo(() => personMonogram(person, people), [person, people]);
+  const claimed = isMemberClaimed(person);
+  const claimLabel = claimed ? t("member_taken") : t("member_placeholder");
 
   useEffect(() => () => {
     window.clearTimeout(pressTimer.current);
@@ -93,9 +96,9 @@ export default function PersonAvatar({ person, people = [], index = 0, size = "d
 
   return (
     <span
-      className={`person-avatar person-avatar-${size}${longPressVisible ? " show-tooltip" : ""}`}
+      className={`person-avatar person-avatar-${size} ${claimed ? "is-claimed" : "is-placeholder"}${longPressVisible ? " show-tooltip" : ""}`}
       role={opensProfile ? "button" : "img"}
-      aria-label={opensProfile ? t("view_member_profile", { name: person?.name || t("member") }) : person?.name || "Unknown person"}
+      aria-label={opensProfile ? `${t("view_member_profile", { name: person?.name || t("member") })} · ${claimLabel}` : `${person?.name || t("member")} · ${claimLabel}`}
       tabIndex={inControl ? undefined : 0}
       onPointerDown={startPress}
       onPointerUp={endPress}
@@ -109,7 +112,7 @@ export default function PersonAvatar({ person, people = [], index = 0, size = "d
       <span className={`avatar${size === "small" ? " small" : ""}`} style={{ background: personColor(index, person) }}>
         {person?.photoUrl ? <img src={person.photoUrl} alt="" /> : monogram}
       </span>
-      <span className="person-avatar-tooltip" role="tooltip">{person?.name || "Unknown person"}</span>
+      <span className="person-avatar-tooltip" role="tooltip"><strong>{person?.name || t("member")}</strong><small>{claimLabel}</small></span>
     </span>
   );
 }

@@ -540,6 +540,140 @@ Object.assign(de, {
   how_group_desc: "Erstelle eine lokale Reise oder teile einen kontogeschützten Raum mit einem einzigen Link.",
 });
 
+Object.assign(en, {
+  payer: "Payer", choose_payer: "Choose payer", other_costs: "Other costs",
+  other_costs_help: "Add food, activities or any other shared trip cost. Create as many as you need.",
+  other_total: "Other costs total", add_other_cost: "Add other cost", title: "Title",
+  other_cost_example: "Food, tickets, groceries…", other_cost: "Other cost",
+  other_participants_help: "Choose everyone sharing this cost.", other_split: "Cost split",
+  no_other_costs: "No other costs yet", no_other_costs_desc: "Add food or another custom shared cost.",
+  others: "Others", left_to_pay: "Left to pay", pay_to: "Pay to", status: "Status",
+  record_payment: "Record payment", read_only: "Read only", record_payment_for: "Record payment for {name}",
+  admin_payment_note: "Only admins can record advances. Everyone else sees these values as read only.",
+  cost: "Cost", choose_cost: "Choose cost", payment_amount_invalid: "Enter an amount no greater than the remaining balance.",
+  advance_for: "Advance for {title}",
+  planned_split_desc: "All logistics shares, advances, remaining amounts and payees in the selected currency.",
+});
+Object.assign(ro, {
+  payer: "Plătitor", choose_payer: "Alege plătitorul", other_costs: "Alte costuri",
+  other_costs_help: "Adaugă mâncare, activități sau orice alt cost comun. Poți crea oricâte ai nevoie.",
+  other_total: "Total alte costuri", add_other_cost: "Adaugă alt cost", title: "Titlu",
+  other_cost_example: "Mâncare, bilete, cumpărături…", other_cost: "Alt cost",
+  other_participants_help: "Alege toate persoanele care împart acest cost.", other_split: "Împărțirea costului",
+  no_other_costs: "Nu există alte costuri", no_other_costs_desc: "Adaugă mâncare sau un alt cost comun personalizat.",
+  others: "Altele", left_to_pay: "Rămas de plată", pay_to: "De plătit către", status: "Stare",
+  record_payment: "Înregistrează plata", read_only: "Doar citire", record_payment_for: "Înregistrează plata pentru {name}",
+  admin_payment_note: "Doar administratorii pot înregistra avansuri. Pentru ceilalți valorile sunt doar pentru citire.",
+  cost: "Cost", choose_cost: "Alege costul", payment_amount_invalid: "Introdu o sumă care nu depășește soldul rămas.",
+  advance_for: "Avans pentru {title}",
+  planned_split_desc: "Toate costurile logistice, avansurile, sumele rămase și destinatarii în moneda selectată.",
+});
+Object.assign(es, {
+  payer: "Pagador", choose_payer: "Elegir pagador", other_costs: "Otros gastos",
+  other_costs_help: "Añade comida, actividades o cualquier otro gasto compartido. Crea tantos como necesites.",
+  other_total: "Total de otros gastos", add_other_cost: "Añadir otro gasto", title: "Título",
+  other_cost_example: "Comida, entradas, compras…", other_cost: "Otro gasto",
+  other_participants_help: "Elige a todas las personas que comparten este gasto.", other_split: "Reparto del gasto",
+  no_other_costs: "Aún no hay otros gastos", no_other_costs_desc: "Añade comida u otro gasto compartido personalizado.",
+  others: "Otros", left_to_pay: "Pendiente", pay_to: "Pagar a", status: "Estado",
+  record_payment: "Registrar pago", read_only: "Solo lectura", record_payment_for: "Registrar pago de {name}",
+  admin_payment_note: "Solo los administradores pueden registrar anticipos. Los demás tienen acceso de solo lectura.",
+  cost: "Gasto", choose_cost: "Elegir gasto", payment_amount_invalid: "Introduce un importe que no supere el saldo pendiente.",
+  advance_for: "Anticipo para {title}",
+  planned_split_desc: "Todos los gastos logísticos, anticipos, saldos pendientes y destinatarios en la moneda seleccionada.",
+});
+Object.assign(fr, {
+  payer: "Payeur", choose_payer: "Choisir le payeur", other_costs: "Autres frais",
+  other_costs_help: "Ajoutez nourriture, activités ou tout autre frais partagé. Créez-en autant que nécessaire.",
+  other_total: "Total des autres frais", add_other_cost: "Ajouter un autre frais", title: "Titre",
+  other_cost_example: "Repas, billets, courses…", other_cost: "Autre frais",
+  other_participants_help: "Choisissez toutes les personnes qui partagent ce frais.", other_split: "Partage du frais",
+  no_other_costs: "Aucun autre frais", no_other_costs_desc: "Ajoutez un repas ou un autre frais partagé personnalisé.",
+  others: "Autres", left_to_pay: "Reste à payer", pay_to: "Payer à", status: "Statut",
+  record_payment: "Enregistrer le paiement", read_only: "Lecture seule", record_payment_for: "Enregistrer un paiement pour {name}",
+  admin_payment_note: "Seuls les administrateurs peuvent enregistrer des acomptes. Les autres utilisateurs sont en lecture seule.",
+  cost: "Frais", choose_cost: "Choisir le frais", payment_amount_invalid: "Saisissez un montant qui ne dépasse pas le solde restant.",
+  advance_for: "Acompte pour {title}",
+  planned_split_desc: "Tous les frais logistiques, acomptes, soldes restants et destinataires dans la devise choisie.",
+});
+Object.assign(de, {
+  payer: "Zahler", choose_payer: "Zahler auswählen", other_costs: "Weitere Kosten",
+  other_costs_help: "Füge Essen, Aktivitäten oder andere gemeinsame Reisekosten hinzu. Beliebig viele Einträge sind möglich.",
+  other_total: "Weitere Kosten gesamt", add_other_cost: "Weitere Kosten hinzufügen", title: "Titel",
+  other_cost_example: "Essen, Tickets, Einkäufe…", other_cost: "Weitere Kosten",
+  other_participants_help: "Wähle alle aus, die diese Kosten teilen.", other_split: "Kostenaufteilung",
+  no_other_costs: "Noch keine weiteren Kosten", no_other_costs_desc: "Füge Essen oder andere gemeinsame Kosten hinzu.",
+  others: "Weitere", left_to_pay: "Noch zu zahlen", pay_to: "Zahlen an", status: "Status",
+  record_payment: "Zahlung erfassen", read_only: "Nur lesen", record_payment_for: "Zahlung für {name} erfassen",
+  admin_payment_note: "Nur Admins können Anzahlungen erfassen. Für alle anderen sind die Werte schreibgeschützt.",
+  cost: "Kosten", choose_cost: "Kosten auswählen", payment_amount_invalid: "Gib einen Betrag ein, der den offenen Saldo nicht übersteigt.",
+  advance_for: "Anzahlung für {title}",
+  planned_split_desc: "Alle Logistikkosten, Anzahlungen, Restbeträge und Empfänger in der ausgewählten Währung.",
+});
+
+Object.assign(en, { member_taken: "Taken · joined member", member_placeholder: "Available placeholder", taken: "Taken", available: "Available" });
+Object.assign(ro, { member_taken: "Ocupat · membru conectat", member_placeholder: "Loc disponibil", taken: "Ocupat", available: "Disponibil" });
+Object.assign(es, { member_taken: "Ocupado · miembro conectado", member_placeholder: "Plaza disponible", taken: "Ocupado", available: "Disponible" });
+Object.assign(fr, { member_taken: "Pris · membre connecté", member_placeholder: "Place disponible", taken: "Pris", available: "Disponible" });
+Object.assign(de, { member_taken: "Belegt · verbundenes Mitglied", member_placeholder: "Verfügbarer Platz", taken: "Belegt", available: "Verfügbar" });
+
+Object.assign(en, {
+  payment_amount: "Amount paid",
+  use_full_amount: "Use full amount",
+  payer_or_admin_only: "Only the payer or an admin can confirm this payment.",
+  confirm_payment_desc: "Enter the amount paid. A partial payment leaves the rest pending.",
+});
+Object.assign(ro, {
+  payment_amount: "Suma plătită",
+  use_full_amount: "Folosește suma integrală",
+  payer_or_admin_only: "Doar plătitorul sau un administrator poate confirma această plată.",
+  confirm_payment_desc: "Introdu suma plătită. Pentru o plată parțială, restul rămâne în așteptare.",
+});
+Object.assign(es, {
+  payment_amount: "Importe pagado",
+  use_full_amount: "Usar el importe completo",
+  payer_or_admin_only: "Solo el pagador o un administrador puede confirmar este pago.",
+  confirm_payment_desc: "Introduce el importe pagado. Si es parcial, el resto seguirá pendiente.",
+});
+Object.assign(fr, {
+  payment_amount: "Montant payé",
+  use_full_amount: "Utiliser le montant total",
+  payer_or_admin_only: "Seul le payeur ou un administrateur peut confirmer ce paiement.",
+  confirm_payment_desc: "Saisissez le montant payé. En cas de paiement partiel, le solde reste en attente.",
+});
+Object.assign(de, {
+  payment_amount: "Gezahlter Betrag",
+  use_full_amount: "Gesamtbetrag verwenden",
+  payer_or_admin_only: "Nur der Zahler oder ein Admin kann diese Zahlung bestätigen.",
+  confirm_payment_desc: "Gib den gezahlten Betrag ein. Bei einer Teilzahlung bleibt der Rest offen.",
+});
+
+Object.assign(en, {
+  delete_expense: "Delete expense",
+  delete_expense_confirm_title: "Delete this expense?",
+  delete_expense_confirm_desc: "Delete {description}? Its shares will be removed from every balance. Settlement records that no longer apply will also be removed or reduced.",
+});
+Object.assign(ro, {
+  delete_expense: "Șterge cheltuiala",
+  delete_expense_confirm_title: "Ștergi această cheltuială?",
+  delete_expense_confirm_desc: "Ștergi {description}? Partea ei va fi eliminată din toate soldurile. Plățile de decontare care nu se mai aplică vor fi eliminate sau reduse.",
+});
+Object.assign(es, {
+  delete_expense: "Eliminar gasto",
+  delete_expense_confirm_title: "¿Eliminar este gasto?",
+  delete_expense_confirm_desc: "¿Eliminar {description}? Su reparto desaparecerá de todos los saldos. Los pagos que ya no correspondan también se eliminarán o reducirán.",
+});
+Object.assign(fr, {
+  delete_expense: "Supprimer la dépense",
+  delete_expense_confirm_title: "Supprimer cette dépense ?",
+  delete_expense_confirm_desc: "Supprimer {description} ? Sa part sera retirée de tous les soldes. Les règlements qui ne s’appliquent plus seront également supprimés ou réduits.",
+});
+Object.assign(de, {
+  delete_expense: "Ausgabe löschen",
+  delete_expense_confirm_title: "Diese Ausgabe löschen?",
+  delete_expense_confirm_desc: "{description} löschen? Ihr Anteil wird aus allen Salden entfernt. Nicht mehr zutreffende Ausgleichszahlungen werden ebenfalls entfernt oder reduziert.",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

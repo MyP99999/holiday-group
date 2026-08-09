@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { packOnlineTripState, unpackOnlineTripState } from "./onlineStateCodec";
 
 function friendlyError(error) {
   const message = error?.message || "Something went wrong. Please try again.";
@@ -72,13 +73,13 @@ export function supabaseRoomDriver(roomCode) {
     async read() {
       const state = await rpc("get_trip_state", { p_code: code });
       tripId = state?.tripId || tripId;
-      return state;
+      return unpackOnlineTripState(state);
     },
 
     write(state) {
       writeQueue = writeQueue
         .catch(() => undefined)
-        .then(() => rpc("save_trip_state", { p_code: code, p_state: state }));
+        .then(() => rpc("save_trip_state", { p_code: code, p_state: packOnlineTripState(state) }));
       return writeQueue;
     },
 

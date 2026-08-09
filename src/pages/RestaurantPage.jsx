@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import PageHeader from "../components/PageHeader";
+import { Navigate, useNavigate } from "react-router-dom";
 import CurrencySelect from "../components/CurrencySelect";
 import { useApp } from "../context/AppContext";
 import { fmt } from "../utils";
@@ -15,7 +14,7 @@ function starterItems(people) {
   ];
 }
 
-export default function RestaurantPage() {
+export function RestaurantExpenseForm() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { people, setExpenses } = useApp();
@@ -92,8 +91,7 @@ export default function RestaurantPage() {
   };
 
   return (
-    <div className="page-stack compact-page">
-      <PageHeader title={t("restaurant_split")} description={t("restaurant_desc")} />
+    <div className="expense-tool-content">
       {!people.length ? (
         <section className="surface-panel empty-copy"><h2>{t("add_group_first")}</h2><p>{t("restaurant_people_desc")}</p><button className="button primary" onClick={() => navigate("../people")}>{t("add_person")}</button></section>
       ) : (
@@ -135,4 +133,8 @@ export default function RestaurantPage() {
       )}
     </div>
   );
+}
+
+export default function RestaurantPage() {
+  return <Navigate to="../expenses" replace state={{ expenseMode: "restaurant" }} />;
 }

@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { LuReceiptText, LuScanLine, LuUtensils } from "react-icons/lu";
 import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
 import PersonAvatar from "../components/PersonAvatar";
+import { ScanExpenseForm } from "./ScanPage";
+import { RestaurantExpenseForm } from "./RestaurantPage";
 import { useApp } from "../context/AppContext";
 import { convert, fmt, getExpenseShares } from "../utils";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
+import { removeExpenseFromTripState } from "../utils/expenseDeletion";
 
 const emptyForm = {
   description: "",
@@ -20,13 +24,19 @@ const emptyForm = {
 
 export default function ExpensesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t, locale } = useLanguage();
   const { rateDate, status: rateStatus } = useCurrencyRates();
   const formRef = useRef(null);
-  const { people, expenses, setExpenses } = useApp();
+  const { people, expenses, setExpenses, updateTripState } = useApp();
   const [displayCurrency, setDisplayCurrency] = useState("EUR");
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
+  const [expenseMode, setExpenseMode] = useState(() => {
+    const requestedMode = location.state?.expenseMode;
+    return requestedMode === "scan" || requestedMode === "restaurant" ? requestedMode : "manual";
+  });
   const totalSpent = useMemo(
     () => expenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
     [expenses, displayCurrency, rateDate]
@@ -37,6 +47,28 @@ export default function ExpensesPage() {
       setForm((current) => ({ ...current, paidById: String(people[0].id), participantIds: people.map((person) => person.id) }));
     }
   }, [people, form.paidById]);
+
+  useEffect(() => {
+    const requestedMode = location.state?.expenseMode;
+    if (requestedMode === "scan" || requestedMode === "restaurant") setExpenseMode(requestedMode);
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!expenseToDelete) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => event.key === "Escape" && setExpenseToDelete(null);
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [expenseToDelete]);
+
+  const openExpenseMode = (mode) => {
+    setExpenseMode(mode);
+    window.requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   const toggleParticipant = (id) => setForm((current) => ({
     ...current,
@@ -78,13 +110,18 @@ export default function ExpensesPage() {
   };
 
   const personName = (id) => people.find((person) => String(person.id) === String(id))?.name || "Unknown";
+  const confirmDeleteExpense = () => {
+    if (!expenseToDelete) return;
+    updateTripState((current) => removeExpenseFromTripState(current, expenseToDelete.id));
+    setExpenseToDelete(null);
+  };
 
   return (
     <div className="page-stack">
       <PageHeader
         title={t("expenses")}
         description={t("expenses_desc")}
-        actions={<><CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} /><button className="button primary" onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>+ {t("add_expense")}</button></>}
+        actions={<><CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} /><button className="button primary" onClick={() => openExpenseMode("manual")}>+ {t("add_expense")}</button></>}
       />
 
       <section className="summary-band" aria-label="Expense summary">
@@ -94,7 +131,7 @@ export default function ExpensesPage() {
         <div className="rate-status"><span>{rateStatus === "live" ? t("live_rates") : t("rates_updated")}</span><strong>{rateDate}</strong></div>
       </section>
 
-      <div className="expense-workspace">
+      <div className={`expense-workspace${expenseMode !== "manual" ? " expense-workspace-expanded" : ""}`}>
         <section className="surface-panel expense-list-panel">
           <div className="panel-heading"><div><h2>{t("recent_expenses")}</h2></div></div>
           {expenses.length ? (
@@ -112,7 +149,7 @@ export default function ExpensesPage() {
                     <span>{expense.shares ? "Custom" : `${shares.length} ${shares.length === 1 ? "person" : "people"}`}</span>
                     <span>{expense.date ? new Date(expense.date).toLocaleDateString(locale, { day: "2-digit", month: "short" }) : "—"}</span>
                     <span className="amount-cell"><strong>{fmt(expense.amount, expense.currency)}</strong>{expense.currency !== displayCurrency && <small>{fmt(converted, displayCurrency)}</small>}</span>
-                    <button className="row-action" onClick={() => setExpenses((current) => current.filter((item) => item.id !== expense.id))}>Remove</button>
+                    <button className="row-action" onClick={() => setExpenseToDelete(expense)}>{t("remove")}</button>
                   </div>
                 );
               })}
@@ -120,9 +157,14 @@ export default function ExpensesPage() {
           ) : <div className="empty-copy"><h3>{t("no_expenses")}</h3><p>{t("no_expenses_desc")}</p></div>}
         </section>
 
-        <aside className="surface-panel expense-form-panel" ref={formRef}>
+        <section className="surface-panel expense-form-panel" ref={formRef}>
           <div className="panel-heading"><div><h2>{t("add_an_expense")}</h2></div></div>
-          {!people.length ? (
+          <div className="expense-entry-tabs" role="tablist" aria-label="Expense type">
+            <button type="button" role="tab" aria-selected={expenseMode === "manual"} className={expenseMode === "manual" ? "active" : ""} onClick={() => setExpenseMode("manual")}><LuReceiptText aria-hidden="true" /><span>{t("add_expense")}</span></button>
+            <button type="button" role="tab" aria-selected={expenseMode === "scan"} className={expenseMode === "scan" ? "active" : ""} onClick={() => setExpenseMode("scan")}><LuScanLine aria-hidden="true" /><span>{t("scan_receipt")}</span></button>
+            <button type="button" role="tab" aria-selected={expenseMode === "restaurant"} className={expenseMode === "restaurant" ? "active" : ""} onClick={() => setExpenseMode("restaurant")}><LuUtensils aria-hidden="true" /><span>{t("restaurant_split")}</span></button>
+          </div>
+          {expenseMode === "manual" && (!people.length ? (
             <div className="empty-copy compact-empty"><h3>{t("add_people_first")}</h3><p>{t("group_needs_names")}</p><button className="button secondary" onClick={() => navigate("../people")}>{t("overview")}</button></div>
           ) : (
             <div className="form-stack">
@@ -150,11 +192,29 @@ export default function ExpensesPage() {
               </div>
               {error && <p className="form-error">{error}</p>}
               <button className="button primary wide" onClick={saveExpense}>{t("save_expense")}</button>
-              <button className="text-link centered-link" onClick={() => navigate("../scan")}>Scan a receipt instead</button>
             </div>
-          )}
-        </aside>
+          ))}
+          {expenseMode === "scan" && <ScanExpenseForm />}
+          {expenseMode === "restaurant" && <RestaurantExpenseForm />}
+        </section>
       </div>
+
+      {expenseToDelete && (
+        <div className="confirm-overlay" onMouseDown={(event) => event.target === event.currentTarget && setExpenseToDelete(null)}>
+          <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-expense-title" aria-describedby="delete-expense-description">
+            <h2 id="delete-expense-title">{t("delete_expense_confirm_title")}</h2>
+            <p id="delete-expense-description">{t("delete_expense_confirm_desc", { description: expenseToDelete.description })}</p>
+            <div className="confirm-payment-summary">
+              <span><strong>{expenseToDelete.description}</strong> · {personName(expenseToDelete.paidById)}</span>
+              <b>{fmt(expenseToDelete.amount, expenseToDelete.currency)}</b>
+            </div>
+            <div className="confirm-actions">
+              <button className="button secondary" autoFocus onClick={() => setExpenseToDelete(null)}>{t("cancel")}</button>
+              <button className="button danger" onClick={confirmDeleteExpense}>{t("delete_expense")}</button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

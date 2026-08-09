@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import PersonAvatar from "../components/PersonAvatar";
 import BrandButton from "../components/BrandButton";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import {
   claimOnlineRoomMember,
   createOnlineRoom,
@@ -11,11 +12,13 @@ import {
   previewOnlineRoom,
 } from "../storage/supabaseDriver";
 import { normalizeRoomCode } from "../utils/roomAccess";
+import { isMemberClaimed, isRoomPersonSelectable } from "../utils/memberClaims";
 
 export default function RoomLobbyPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const requestedRoomCode = normalizeRoomCode(searchParams.get("room"));
   const autoOpenedRoom = useRef("");
   const [rooms, setRooms] = useState([]);
@@ -38,7 +41,7 @@ export default function RoomLobbyPage() {
   }, []);
 
   const availablePeople = roomPreview?.availablePeople || [];
-  const selectedPerson = availablePeople.find((person) => String(person.id) === String(selectedPersonId));
+  const selectedPerson = availablePeople.find((person) => String(person.id) === String(selectedPersonId) && isRoomPersonSelectable(person));
 
   const createRoom = async () => {
     setError("");
@@ -66,7 +69,7 @@ export default function RoomLobbyPage() {
       if (!preview) throw new Error("Room not found. Check the code and try again.");
       setRoomPreview({ ...preview, code });
       const matchingPerson = (preview.availablePeople || []).find(
-        (person) => person.name.toLowerCase() === (user?.name || "").toLowerCase()
+        (person) => isRoomPersonSelectable(person) && person.name.toLowerCase() === (user?.name || "").toLowerCase()
       );
       setSelectedPersonId(matchingPerson?.id || "");
     } catch (err) {
@@ -84,7 +87,7 @@ export default function RoomLobbyPage() {
   }, [findRoom, requestedRoomCode]);
 
   const claimPerson = async () => {
-    if (!selectedPerson) return;
+    if (!selectedPerson || !isRoomPersonSelectable(selectedPerson)) return;
     setError("");
     setBusy("claim");
     try {
@@ -192,11 +195,12 @@ export default function RoomLobbyPage() {
                     <div className="join-choice-heading"><h3>Are you already listed?</h3><p>Choose your existing person so expenses and balances stay connected to you.</p></div>
                     <div className="claim-person-grid" role="radiogroup" aria-label="People available to claim">
                       {availablePeople.map((person, index) => {
+                        const claimed = isMemberClaimed(person);
                         const selected = String(selectedPersonId) === String(person.id);
                         return (
-                          <button type="button" role="radio" aria-checked={selected} className={`claim-person-option${selected ? " selected" : ""}`} key={person.id} onClick={() => { setSelectedPersonId(person.id); setError(""); }}>
+                          <button type="button" role="radio" aria-checked={selected && !claimed} aria-disabled={claimed} className={`claim-person-option${selected && !claimed ? " selected" : ""}${claimed ? " is-taken" : ""}`} key={person.id} onClick={() => { if (claimed) return; setSelectedPersonId(person.id); setError(""); }}>
                             <PersonAvatar person={person} people={availablePeople} index={index} inControl />
-                            <span><strong>{person.name}</strong><small>{person.role === "admin" ? "Admin" : "Member"}</small></span>
+                            <span><strong>{person.name}</strong><small>{claimed ? `${person.role === "admin" ? "Admin" : "Member"} · ${t("taken")}` : `${person.role === "admin" ? "Admin" : "Member"} · ${t("available")}`}</small></span>
                           </button>
                         );
                       })}

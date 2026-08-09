@@ -1,9 +1,9 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useLayoutEffect, useState } from "react";
 import {
+  LuHandCoins,
+  LuLayoutDashboard,
   LuReceiptText,
-  LuScanLine,
-  LuUtensils,
   LuCalendarDays,
   LuMessageCircle,
   LuVote,
@@ -17,13 +17,11 @@ import { unreadBadge, unreadMessages } from "../utils/chatNotifications";
 import { sharedRoomInviteUrl } from "../utils/roomAccess";
 
 const navItems = [
-  { to: "people", labelKey: "overview", desktop: true },
-  { to: "expenses", labelKey: "expenses", icon: LuReceiptText, mobile: true },
-  { to: "scan", labelKey: "scan_receipt", mobileKey: "scan", icon: LuScanLine, mobile: true },
-  { to: "restaurant", labelKey: "restaurant_split", mobileKey: "split", icon: LuUtensils, mobile: true },
-  { to: "settle", labelKey: "settle_up", desktop: true },
-  { to: "plan", labelKey: "trip_logistics", mobileKey: "plan", icon: LuCalendarDays, mobile: true },
-  { to: "decisions", labelKey: "group_decisions", mobileKey: "decisions", icon: LuVote, mobile: true },
+  { to: "people", labelKey: "overview", icon: LuLayoutDashboard, mobile: true, mobileOrder: 5 },
+  { to: "expenses", labelKey: "expenses", icon: LuReceiptText, mobile: true, mobileOrder: 1 },
+  { to: "settle", labelKey: "settle_up", mobileKey: "settle", icon: LuHandCoins, mobile: true, mobileOrder: 2 },
+  { to: "plan", labelKey: "trip_logistics", mobileKey: "plan", icon: LuCalendarDays, mobile: true, mobileOrder: 3 },
+  { to: "decisions", labelKey: "group_decisions", mobileKey: "decisions", icon: LuVote, mobile: true, mobileOrder: 4 },
   { to: "chat", labelKey: "group_chat", mobileKey: "chat", icon: LuMessageCircle },
 ];
 
@@ -130,7 +128,7 @@ function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo }) {
         </main>
 
         <nav className="bottom-nav" aria-label="Primary navigation">
-          {navItems.filter((item) => item.mobile).map(({ to, labelKey, mobileKey, icon: Icon }) => (
+          {navItems.filter((item) => item.mobile).sort((a, b) => a.mobileOrder - b.mobileOrder).map(({ to, labelKey, mobileKey, icon: Icon }) => (
             <NavLink key={to} to={to} className={({ isActive }) => `nav-tab${isActive ? " active" : ""}`}>
               <Icon aria-hidden="true" />
               <span>{t(mobileKey || labelKey)}</span>

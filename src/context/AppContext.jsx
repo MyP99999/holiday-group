@@ -74,6 +74,16 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
     persist(next);
   };
 
+  const updateTripState = (updater) => {
+    const previous = stateRef.current;
+    if (!previous || typeof updater !== "function") return;
+    const next = updater(previous);
+    if (!next || next === previous) return;
+    stateRef.current = next;
+    setState(next);
+    persist(next);
+  };
+
   if (!state) {
     return (
       <div className="app-loading app-loading-state">
@@ -143,6 +153,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
       canManageMembers,
       canEditMemberProfile,
       updateMemberProfile,
+      updateTripState,
       isSyncing: pendingWrites > 0,
       syncError,
       setPeople: (updater) => setField("people", updater),
@@ -150,11 +161,13 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
       setAccommodations: (updater) => setField("accommodations", updater),
       setVehicles: (updater) => setField("vehicles", updater),
       setFlights: (updater) => setField("flights", updater),
+      setOtherCosts: (updater) => setField("otherCosts", updater),
       setPolls: (updater) => setField("polls", updater),
       setComments: (updater) => setField("comments", updater),
       setChatMessages: (updater) => setField("chatMessages", updater),
       setPaymentRoutes: (updater) => setField("paymentRoutes", updater),
       setSettlementPayments: (updater) => setField("settlementPayments", updater),
+      setLogisticsPayments: (updater) => setField("logisticsPayments", updater),
     }}>
       {children}
     </AppContext.Provider>

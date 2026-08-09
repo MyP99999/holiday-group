@@ -1,5 +1,5 @@
 export function normalizeRoomCode(value = "") {
-  return String(value)
+  return String(value ?? "")
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")

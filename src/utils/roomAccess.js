@@ -1,6 +1,8 @@
 export function normalizeRoomCode(value = "") {
-  return String(value ?? "")
-    .trim()
+  const candidate = String(value ?? "").trim();
+  if (!candidate || /^(null|undefined)$/i.test(candidate)) return "";
+
+  return candidate
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 6);

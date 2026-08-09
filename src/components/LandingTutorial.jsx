@@ -49,7 +49,7 @@ export default function LandingTutorial() {
   };
 
   return (
-    <section className={`how-section landing-reveal${open ? " tutorial-open" : ""}`} id="how-it-works">
+    <section className={`how-section landing-reveal is-visible${open ? " tutorial-open" : ""}`} id="how-it-works">
       <div className="tutorial-intro">
         <h2>{t("tutorial_title")}</h2>
         <p>{t("tutorial_desc")}</p>

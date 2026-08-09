@@ -1,4 +1,4 @@
-import { calculateSettlements, convert } from "../utils";
+import { calculateSettlements, convert, getExpenseShares } from "../utils";
 
 export function canConfirmSettlementPayment(transaction, currentMemberId, canManageMembers) {
   return Boolean(
@@ -17,6 +17,65 @@ export function resolveSettlementPaymentAmountEUR(amount, currency, maximumAmoun
   const converted = convert(numeric, currency, "EUR");
   if (!converted || converted - maximum > 0.01) return null;
   return maximum - converted < 0.01 ? maximum : converted;
+}
+
+export function normalizeSettlementPaymentReason(reason) {
+  const normalized = String(reason ?? "").trim();
+  return normalized ? normalized.slice(0, 120) : null;
+}
+
+export function getSettlementPaymentReasons(transaction, expenses = [], payments = []) {
+  if (!transaction) return [];
+  const payerId = String(transaction.from);
+  const preferredPayeeId = String(transaction.to);
+  const reasons = expenses.flatMap((expense, index) => {
+    const payeeId = String(expense.paidById || "");
+    const share = getExpenseShares(expense).find((item) => String(item.personId) === payerId);
+    const amountEUR = convert(share?.amount || 0, expense.currency, "EUR");
+    if (!payeeId || payeeId === payerId || amountEUR <= 0.005) return [];
+
+    return [{
+      expenseId: String(expense.id),
+      title: String(expense.description || "Expense"),
+      payeeId,
+      source: expense.source || "expense",
+      remainingEUR: amountEUR,
+      index,
+    }];
+  });
+
+  payments
+    .filter((payment) => String(payment.fromId) === payerId && Number(payment.amountEUR) > 0.005)
+    .forEach((payment) => {
+      let availableEUR = Number(payment.amountEUR);
+      const recordedExpenseId = String(payment.expenseId || payment.logisticsExpenseId || "");
+      const recordedReason = normalizeSettlementPaymentReason(payment.reason || payment.logisticsTitle);
+      const exactCandidates = reasons.filter((reason) => (
+        reason.remainingEUR > 0.005
+        && (
+          (recordedExpenseId && reason.expenseId === recordedExpenseId)
+          || (!recordedExpenseId && recordedReason && reason.title === recordedReason)
+        )
+      ));
+      const fallbackCandidates = reasons
+        .filter((reason) => reason.remainingEUR > 0.005 && !exactCandidates.includes(reason))
+        .sort((left, right) => Number(right.payeeId === String(payment.toId)) - Number(left.payeeId === String(payment.toId)));
+
+      [...exactCandidates, ...fallbackCandidates].forEach((reason) => {
+        if (availableEUR <= 0.005) return;
+        const appliedEUR = Math.min(availableEUR, reason.remainingEUR);
+        reason.remainingEUR = Math.max(0, reason.remainingEUR - appliedEUR);
+        availableEUR -= appliedEUR;
+      });
+    });
+
+  return reasons
+    .filter((reason) => reason.remainingEUR > 0.005)
+    .sort((left, right) => (
+      Number(right.payeeId === preferredPayeeId) - Number(left.payeeId === preferredPayeeId)
+      || left.index - right.index
+    ))
+    .map(({ index, ...reason }) => reason);
 }
 
 export function reconcileSettlementPayments(

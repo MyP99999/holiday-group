@@ -11,6 +11,8 @@ import { useCurrencyRates } from "../context/CurrencyRatesContext";
 import { buildLogisticsExpenses } from "../utils/logisticsCosts";
 import {
   canConfirmSettlementPayment,
+  getSettlementPaymentReasons,
+  normalizeSettlementPaymentReason,
   resolveSettlementPaymentAmountEUR,
 } from "../utils/settlementPayments";
 
@@ -28,6 +30,7 @@ export default function SettlePage() {
   const [activeTab, setActiveTab] = useState("pending");
   const [confirmingPayment, setConfirmingPayment] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentReasonId, setPaymentReasonId] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const logisticsExpenses = useMemo(
     () => buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts }),
@@ -45,9 +48,14 @@ export default function SettlePage() {
   );
   const personById = (id) => people.find((person) => String(person.id) === String(id));
   const personName = (id) => personById(id)?.name || "Unknown";
+  const selectedPaymentReason = confirmingPayment?.reasonOptions.find((reason) => reason.expenseId === paymentReasonId) || null;
+  const selectedMaximumAmountEUR = selectedPaymentReason && confirmingPayment
+    ? Math.min(selectedPaymentReason.remainingEUR, confirmingPayment.transaction.amountEUR)
+    : 0;
   const closePaymentConfirmation = () => {
     setConfirmingPayment(null);
     setPaymentAmount("");
+    setPaymentReasonId("");
     setPaymentError("");
   };
 
@@ -58,6 +66,7 @@ export default function SettlePage() {
       if (event.key !== "Escape") return;
       setConfirmingPayment(null);
       setPaymentAmount("");
+      setPaymentReasonId("");
       setPaymentError("");
     };
     document.body.style.overflow = "hidden";
@@ -71,6 +80,7 @@ export default function SettlePage() {
   const openPaymentConfirmation = (transaction, viaId) => {
     if (!canConfirmSettlementPayment(transaction, currentMemberId, canManageMembers)) return;
     setPaymentAmount("");
+    setPaymentReasonId("");
     setPaymentError("");
     setConfirmingPayment({
       transaction,
@@ -78,12 +88,13 @@ export default function SettlePage() {
       from: personById(transaction.from),
       to: personById(transaction.to),
       via: viaId ? personById(viaId) : null,
+      reasonOptions: getSettlementPaymentReasons(transaction, allExpenses, allPayments),
     });
   };
 
   const useFullPaymentAmount = () => {
-    if (!confirmingPayment) return;
-    const amount = convert(confirmingPayment.transaction.amountEUR, "EUR", currency);
+    if (!confirmingPayment || !selectedMaximumAmountEUR) return;
+    const amount = convert(selectedMaximumAmountEUR, "EUR", currency);
     setPaymentAmount(String(Number(amount.toFixed(2))));
     setPaymentError("");
   };
@@ -95,9 +106,18 @@ export default function SettlePage() {
       closePaymentConfirmation();
       return;
     }
-    const amountEUR = resolveSettlementPaymentAmountEUR(paymentAmount, currency, transaction.amountEUR);
+    if (!selectedPaymentReason) {
+      setPaymentError(t("payment_reason_required"));
+      return;
+    }
+    const amountEUR = resolveSettlementPaymentAmountEUR(paymentAmount, currency, selectedMaximumAmountEUR);
     if (amountEUR === null) {
       setPaymentError(t("payment_amount_invalid"));
+      return;
+    }
+    const reason = normalizeSettlementPaymentReason(selectedPaymentReason.title);
+    if (!reason) {
+      setPaymentError(t("payment_reason_required"));
       return;
     }
     const isFullPayment = transaction.amountEUR - amountEUR < 0.01;
@@ -112,6 +132,9 @@ export default function SettlePage() {
       toColor: to?.color || "",
       viaId: viaId || "",
       viaName: via?.name || "",
+      expenseId: selectedPaymentReason.expenseId,
+      expenseSource: selectedPaymentReason.source,
+      reason,
       amountEUR,
       confirmedById: currentMemberId || "",
       isPartial: !isFullPayment,
@@ -197,7 +220,11 @@ export default function SettlePage() {
                   <article className="payment-history-row" key={payment.id}>
                     <PersonAvatar person={from} people={people} size="small" />
                     <div><strong>{payment.fromName} {t("paid")} {payment.toName}</strong><span>{t("paid_on", { date: new Date(payment.paidAt).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }) })}{payment.viaName ? ` · ${t("paid_via", { name: payment.viaName })}` : ""}</span></div>
-                    {payment.source === "logistics" && payment.logisticsTitle && <span className="logistics-history-label">{t("advance_for", { title: payment.logisticsTitle })}</span>}
+                    {payment.reason
+                      ? <span className="payment-history-reason">{t("payment_reason_history", { reason: payment.reason })}</span>
+                      : payment.source === "logistics" && payment.logisticsTitle
+                        ? <span className="payment-history-reason">{t("advance_for", { title: payment.logisticsTitle })}</span>
+                        : null}
                     <b>{amount}</b>
                   </article>
                 );
@@ -213,20 +240,46 @@ export default function SettlePage() {
             <h2 id="confirm-payment-title">{t("confirm_payment")}</h2>
             <p id="confirm-payment-description">{t("confirm_payment_desc")}</p>
             <div className="confirm-payment-summary">
+              <small className="confirm-payment-due-label">{t("total_left_to_settle")}</small>
               <span><strong>{confirmingPayment.from?.name}</strong> {t("pays")} <strong>{confirmingPayment.to?.name}</strong></span>
               <b>{fmt(convert(confirmingPayment.transaction.amountEUR, "EUR", currency), currency)}</b>
-              {confirmingPayment.via && <small>{t("paid_via", { name: confirmingPayment.via.name })}</small>}
+              {confirmingPayment.via && <small className="confirm-payment-via">{t("paid_via", { name: confirmingPayment.via.name })}</small>}
             </div>
+            <label className="confirm-payment-reason">
+              <span>{t("payment_reason")}</span>
+              <select
+                autoFocus
+                value={paymentReasonId}
+                onChange={(event) => {
+                  setPaymentReasonId(event.target.value);
+                  setPaymentAmount("");
+                  setPaymentError("");
+                }}
+              >
+                <option value="">{t("choose_payment_reason")}</option>
+                {confirmingPayment.reasonOptions.map((reason) => (
+                  <option key={reason.expenseId} value={reason.expenseId}>
+                    {reason.title} · {fmt(convert(Math.min(reason.remainingEUR, confirmingPayment.transaction.amountEUR), "EUR", currency), currency)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {selectedPaymentReason && (
+              <div className="confirm-reason-summary">
+                <span><small>{t("sum_to_pay")}</small><strong>{selectedPaymentReason.title}</strong></span>
+                <b>{fmt(convert(selectedMaximumAmountEUR, "EUR", currency), currency)}</b>
+              </div>
+            )}
             <label className="confirm-payment-amount">
               <span>{t("payment_amount")}</span>
               <div>
                 <input
-                  autoFocus
                   type="number"
                   min="0.01"
-                  max={convert(confirmingPayment.transaction.amountEUR, "EUR", currency)}
+                  max={convert(selectedMaximumAmountEUR, "EUR", currency) || undefined}
                   step="0.01"
                   inputMode="decimal"
+                  disabled={!selectedPaymentReason}
                   value={paymentAmount}
                   onChange={(event) => {
                     setPaymentAmount(event.target.value);
@@ -237,11 +290,11 @@ export default function SettlePage() {
                 <strong>{currency}</strong>
               </div>
             </label>
-            <button type="button" className="text-link full-payment-button" onClick={useFullPaymentAmount}>
-              {t("use_full_amount")} · {fmt(convert(confirmingPayment.transaction.amountEUR, "EUR", currency), currency)}
-            </button>
+            {selectedPaymentReason && <button type="button" className="text-link full-payment-button" onClick={useFullPaymentAmount}>
+              {t("use_full_amount")} · {fmt(convert(selectedMaximumAmountEUR, "EUR", currency), currency)}
+            </button>}
             {paymentError && <p className="form-error" role="alert">{paymentError}</p>}
-            <div className="confirm-actions"><button className="button secondary" onClick={closePaymentConfirmation}>{t("cancel")}</button><button className="button primary" disabled={!paymentAmount} onClick={markPaymentPaid}>{t("confirm_paid")}</button></div>
+            <div className="confirm-actions"><button className="button secondary" onClick={closePaymentConfirmation}>{t("cancel")}</button><button className="button primary" disabled={!paymentAmount || !selectedPaymentReason} onClick={markPaymentPaid}>{t("confirm_paid")}</button></div>
           </section>
         </div>
       )}

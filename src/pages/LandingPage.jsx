@@ -7,6 +7,7 @@ import LandingTutorial from "../components/LandingTutorial";
 import LandingSocialShowcase from "../components/LandingSocialShowcase";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { SOCIAL_LINKS } from "../constants";
 
 const slides = [
   {
@@ -205,8 +206,8 @@ export default function LandingPage() {
           </div>
           <div className="footer-column footer-socials">
             <strong>{t("footer_follow")}</strong>
-            <span>Instagram <small>{t("footer_soon")}</small></span>
-            <span>TikTok <small>{t("footer_soon")}</small></span>
+            <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer">Instagram <small>@holidaysplits</small></a>
+            <a href={SOCIAL_LINKS.tiktok} target="_blank" rel="noreferrer">TikTok <small>@holidaysplits</small></a>
           </div>
         </div>
         <div className="landing-footer-bottom">

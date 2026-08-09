@@ -1,5 +1,10 @@
 export const RATE_DATE = "06 Aug 2026";
 
+export const SOCIAL_LINKS = {
+  instagram: "https://www.instagram.com/holidaysplits/",
+  tiktok: "https://www.tiktok.com/@holidaysplits",
+};
+
 // ECB reference rates: one euro equals the listed amount of each currency.
 // These are intentionally stored as a single base table so every cross-rate is consistent.
 export const EUR_RATES = {

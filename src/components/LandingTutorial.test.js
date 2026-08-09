@@ -33,10 +33,13 @@ describe("LandingTutorial", () => {
 
   test("opens the guide and switches tutorial steps", () => {
     const toggle = container.querySelector(".tutorial-toggle");
+    const section = container.querySelector(".how-section");
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(section.classList.contains("is-visible")).toBe(true);
 
     act(() => toggle.click());
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(section.classList.contains("is-visible")).toBe(true);
     expect(container.textContent).toContain("K7M4Q2");
 
     const spendButton = [...container.querySelectorAll(".tutorial-step-button")]

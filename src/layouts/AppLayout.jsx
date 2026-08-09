@@ -110,7 +110,7 @@ function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo }) {
                 <button onClick={() => navigate(backTo)}>{t("all_trips")}</button>
               </>
             )}
-            <button className="quiet-link" onClick={() => navigate(backTo)}>{t("leave_trip")}</button>
+            <button className="quiet-link" onClick={() => navigate("/")}>{t("go_to_landing_page")}</button>
           </div>
         </aside>
 

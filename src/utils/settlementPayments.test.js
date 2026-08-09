@@ -1,5 +1,7 @@
 import {
   canConfirmSettlementPayment,
+  getSettlementPaymentReasons,
+  normalizeSettlementPaymentReason,
   reconcileSettlementPayments,
   resolveSettlementPaymentAmountEUR,
 } from "./settlementPayments";
@@ -21,6 +23,40 @@ describe("settlement payment confirmation", () => {
     expect(resolveSettlementPaymentAmountEUR(35, "EUR", 100)).toBe(35);
     expect(resolveSettlementPaymentAmountEUR(100, "EUR", 100)).toBe(100);
     expect(resolveSettlementPaymentAmountEUR(100.02, "EUR", 100)).toBeNull();
+  });
+
+  test("keeps a concise reason with every confirmed settlement", () => {
+    expect(normalizeSettlementPaymentReason("  Rental car  ")).toBe("Rental car");
+    expect(normalizeSettlementPaymentReason("   ")).toBeNull();
+    expect(normalizeSettlementPaymentReason(null)).toBeNull();
+    expect(normalizeSettlementPaymentReason("x".repeat(140))).toHaveLength(120);
+  });
+
+  test("offers real unpaid expenses as selectable payment reasons", () => {
+    const reasons = getSettlementPaymentReasons(
+      { from: "guest", to: "rental-payer", amountEUR: 75 },
+      [
+        { id: "dinner", description: "Dinner", amount: 60, currency: "EUR", paidById: "food-payer", participantIds: ["guest", "food-payer"] },
+        { id: "rental", description: "Rental car", amount: 150, currency: "EUR", paidById: "rental-payer", participantIds: ["guest", "rental-payer"] },
+      ]
+    );
+
+    expect(reasons).toEqual([
+      expect.objectContaining({ expenseId: "rental", title: "Rental car", payeeId: "rental-payer", remainingEUR: 75 }),
+      expect.objectContaining({ expenseId: "dinner", title: "Dinner", payeeId: "food-payer", remainingEUR: 30 }),
+    ]);
+  });
+
+  test("reduces the selected reason after a recorded payment", () => {
+    const reasons = getSettlementPaymentReasons(
+      { from: "guest", to: "payer", amountEUR: 60 },
+      [{ id: "rental", description: "Rental car", amount: 200, currency: "EUR", paidById: "payer", participantIds: ["guest", "payer"] }],
+      [{ fromId: "guest", toId: "payer", expenseId: "rental", reason: "Rental car", amountEUR: 40 }]
+    );
+
+    expect(reasons).toEqual([
+      expect.objectContaining({ expenseId: "rental", remainingEUR: 60 }),
+    ]);
   });
 
   test("leaves the unpaid balance pending after a partial confirmation", () => {

@@ -13,8 +13,12 @@ describe("authenticated shared-room entry", () => {
   test("treats a missing room code as empty instead of displaying null", () => {
     expect(normalizeRoomCode(null)).toBe("");
     expect(normalizeRoomCode(undefined)).toBe("");
+    expect(normalizeRoomCode("null")).toBe("");
+    expect(normalizeRoomCode(" undefined ")).toBe("");
     expect(sharedRoomAuthPath(null)).toBe("/online?mode=register");
+    expect(sharedRoomAuthPath("null")).toBe("/online?mode=register");
     expect(sharedRoomLobbyPath(null)).toBe("/online/lobby");
+    expect(sharedRoomLobbyPath("null")).toBe("/online/lobby");
   });
 
   test("preserves the room code through account creation and the lobby", () => {

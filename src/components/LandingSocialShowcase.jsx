@@ -1,16 +1,18 @@
+import { FaInstagram, FaTiktok } from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
+import { SOCIAL_LINKS } from "../constants";
 
 const socialPreviews = [
   {
     platform: "Instagram",
-    image: "/images/social-instagram-trip.jpg",
-    altKey: "social_instagram_alt",
+    href: SOCIAL_LINKS.instagram,
+    Icon: FaInstagram,
     className: "instagram",
   },
   {
     platform: "TikTok",
-    image: "/images/social-tiktok-trip.jpg",
-    altKey: "social_tiktok_alt",
+    href: SOCIAL_LINKS.tiktok,
+    Icon: FaTiktok,
     className: "tiktok",
   },
 ];
@@ -19,17 +21,21 @@ export default function LandingSocialShowcase() {
   const { t } = useLanguage();
 
   return (
-    <section className="landing-social-showcase landing-reveal" aria-label={t("footer_follow")}>
-      {socialPreviews.map((preview) => (
-        <article className={`social-preview ${preview.className}`} key={preview.platform}>
-          <figure>
-            <img src={preview.image} alt={t(preview.altKey)} loading="lazy" />
+    <section className="landing-social-showcase landing-reveal" id="socials" aria-label={t("footer_follow")}>
+      {socialPreviews.map(({ platform, href, Icon, className }) => (
+        <a className={`social-preview ${className}`} href={href} target="_blank" rel="noreferrer" key={platform}>
+          <figure aria-hidden="true">
+            <span className="social-brand-tile">
+              <img src="/brand-mark.png" alt="" />
+              <b>HolidaySplits</b>
+            </span>
+            <span className="social-platform-mark"><Icon /></span>
           </figure>
           <div>
-            <strong>{preview.platform}</strong>
-            <span>{t("footer_soon")}</span>
+            <strong>{platform}</strong>
+            <span>@holidaysplits ↗</span>
           </div>
-        </article>
+        </a>
       ))}
     </section>
   );

@@ -674,6 +674,63 @@ Object.assign(de, {
   delete_expense_confirm_desc: "{description} löschen? Ihr Anteil wird aus allen Salden entfernt. Nicht mehr zutreffende Ausgleichszahlungen werden ebenfalls entfernt oder reduziert.",
 });
 
+Object.assign(en, { go_to_landing_page: "Go to landing page" });
+Object.assign(ro, { go_to_landing_page: "Mergi la pagina principală" });
+Object.assign(es, { go_to_landing_page: "Ir a la página principal" });
+Object.assign(fr, { go_to_landing_page: "Aller à la page d’accueil" });
+Object.assign(de, { go_to_landing_page: "Zur Startseite" });
+
+Object.assign(en, {
+  sum_to_pay: "Sum to pay",
+  total_left_to_settle: "Total left to settle",
+  payment_reason: "Payment reason",
+  choose_payment_reason: "Choose an expense",
+  payment_reason_placeholder: "Rental car, accommodation, dinner…",
+  payment_reason_required: "Choose what this payment is for.",
+  payment_reason_history: "For: {reason}",
+  confirm_payment_desc: "Choose what the payment covers, then enter the amount paid. A partial payment leaves the rest pending.",
+});
+Object.assign(ro, {
+  sum_to_pay: "Suma de plată",
+  total_left_to_settle: "Total rămas de achitat",
+  payment_reason: "Motivul plății",
+  choose_payment_reason: "Alege o cheltuială",
+  payment_reason_placeholder: "Mașină închiriată, cazare, cină…",
+  payment_reason_required: "Alege pentru ce este această plată.",
+  payment_reason_history: "Pentru: {reason}",
+  confirm_payment_desc: "Alege ce acoperă plata, apoi introdu suma plătită. Pentru o plată parțială, restul rămâne în așteptare.",
+});
+Object.assign(es, {
+  sum_to_pay: "Suma a pagar",
+  total_left_to_settle: "Total pendiente de saldar",
+  payment_reason: "Motivo del pago",
+  choose_payment_reason: "Elegir un gasto",
+  payment_reason_placeholder: "Coche de alquiler, alojamiento, cena…",
+  payment_reason_required: "Elige qué cubre este pago.",
+  payment_reason_history: "Para: {reason}",
+  confirm_payment_desc: "Elige qué cubre el pago e introduce el importe pagado. Si es parcial, el resto seguirá pendiente.",
+});
+Object.assign(fr, {
+  sum_to_pay: "Somme à payer",
+  total_left_to_settle: "Total restant à régler",
+  payment_reason: "Motif du paiement",
+  choose_payment_reason: "Choisir une dépense",
+  payment_reason_placeholder: "Voiture de location, hébergement, dîner…",
+  payment_reason_required: "Choisissez ce que couvre ce paiement.",
+  payment_reason_history: "Pour : {reason}",
+  confirm_payment_desc: "Choisissez ce que couvre le paiement, puis saisissez le montant payé. En cas de paiement partiel, le solde reste en attente.",
+});
+Object.assign(de, {
+  sum_to_pay: "Zu zahlender Betrag",
+  total_left_to_settle: "Noch auszugleichen",
+  payment_reason: "Zahlungsgrund",
+  choose_payment_reason: "Ausgabe auswählen",
+  payment_reason_placeholder: "Mietwagen, Unterkunft, Abendessen…",
+  payment_reason_required: "Wähle aus, wofür diese Zahlung ist.",
+  payment_reason_history: "Für: {reason}",
+  confirm_payment_desc: "Wähle aus, was die Zahlung abdeckt, und gib den gezahlten Betrag ein. Bei einer Teilzahlung bleibt der Rest offen.",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

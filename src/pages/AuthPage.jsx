@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { normalizeRoomCode, sharedRoomLobbyPath } from "../utils/roomAccess";
 import { googleAuthEnabled } from "../lib/supabase";
+import { NATIVE_AUTH_ERROR_KEY } from "../lib/nativeApp";
 import BrandButton from "../components/BrandButton";
 import LanguageSelect from "../components/LanguageSelect";
 
@@ -23,7 +24,11 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    const nativeError = sessionStorage.getItem(NATIVE_AUTH_ERROR_KEY) || "";
+    sessionStorage.removeItem(NATIVE_AUTH_ERROR_KEY);
+    return nativeError;
+  });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +63,10 @@ export default function AuthPage() {
         await login(email, password);
         navigate(destination);
       } else {
-        const result = await register(name, email, password, { redirectTo: authRedirectUrl });
+        const result = await register(name, email, password, {
+          redirectTo: authRedirectUrl,
+          returnPath: destination,
+        });
         if (result.needsEmailConfirmation) {
           setMessage(t("confirm_email_message"));
           setTab("login");
@@ -76,7 +84,7 @@ export default function AuthPage() {
   const handleGoogle = async () => {
     resetFeedback();
     try {
-      await loginWithGoogle({ redirectTo: authRedirectUrl });
+      await loginWithGoogle({ redirectTo: authRedirectUrl, returnPath: destination });
     } catch (err) {
       setError(err.message);
     }

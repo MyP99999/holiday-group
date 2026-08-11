@@ -16,6 +16,7 @@ import LanguageSelect from "../components/LanguageSelect";
 import BrandButton from "../components/BrandButton";
 import { unreadBadge, unreadMessages } from "../utils/chatNotifications";
 import { sharedRoomInviteUrl } from "../utils/roomAccess";
+import { publicWebOrigin } from "../lib/nativeApp";
 
 const navItems = [
   { to: "people", labelKey: "overview", icon: LuLayoutDashboard, mobile: true, mobileOrder: 5 },
@@ -70,7 +71,7 @@ function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo }) {
   const copyCode = async () => {
     if (!roomCode) return;
     try {
-      await navigator.clipboard.writeText(sharedRoomInviteUrl(window.location.origin, roomCode));
+      await navigator.clipboard.writeText(sharedRoomInviteUrl(publicWebOrigin(), roomCode));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {

@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { Browser } from "@capacitor/browser";
 import { supabase } from "../lib/supabase";
+import { authRedirectFor, isNativeApp, nativeAuthResult } from "../lib/nativeApp";
 
 const AuthContext = createContext(null);
 
@@ -79,7 +81,7 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const register = async (name, email, password, { redirectTo } = {}) => {
+  const register = async (name, email, password, { redirectTo, returnPath = "/online/lobby" } = {}) => {
     if (!name.trim() || !email.trim() || password.length < 6) {
       throw new Error("Please fill all fields (password min 6 chars)");
     }
@@ -88,19 +90,31 @@ export function AuthProvider({ children }) {
       password,
       options: {
         data: { full_name: name.trim() },
-        emailRedirectTo: redirectTo || `${window.location.origin}/online/lobby`,
+        emailRedirectTo: isNativeApp()
+          ? authRedirectFor(returnPath, "signup")
+          : redirectTo || `${window.location.origin}/online/lobby`,
       },
     });
     if (error) throw error;
     return { ...data, needsEmailConfirmation: !data.session };
   };
 
-  const loginWithGoogle = async ({ redirectTo } = {}) => {
+  const loginWithGoogle = async ({ redirectTo, returnPath = "/online/lobby" } = {}) => {
+    const native = isNativeApp();
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: redirectTo || `${window.location.origin}/online/lobby` },
+      options: {
+        redirectTo: native
+          ? authRedirectFor(returnPath, "oauth")
+          : redirectTo || `${window.location.origin}/online/lobby`,
+        skipBrowserRedirect: native,
+      },
     });
     if (error) throw error;
+    if (native) {
+      if (!data?.url) throw new Error("Google sign-in did not return an authorization URL.");
+      await Browser.open({ url: data.url });
+    }
     return data;
   };
 
@@ -113,7 +127,7 @@ export function AuthProvider({ children }) {
     const cleanEmail = email?.trim();
     if (!cleanEmail) throw new Error("Add your email address first.");
     const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo: `${window.location.origin}/profile?mode=recovery`,
+      redirectTo: authRedirectFor("/profile?mode=recovery", "recovery"),
     });
     if (error) throw error;
   };
@@ -180,6 +194,27 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const completeNativeAuthUrl = useCallback(async (url) => {
+    const result = nativeAuthResult(url);
+    if (result.error) throw new Error(result.error);
+
+    if (result.code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(result.code);
+      if (error) throw error;
+    } else if (result.accessToken && result.refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: result.accessToken,
+        refresh_token: result.refreshToken,
+      });
+      if (error) throw error;
+    } else {
+      throw new Error("The sign-in link did not include a valid session.");
+    }
+
+    if (result.mode === "recovery") setRecoveryMode(true);
+    return result.returnPath;
+  }, []);
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -194,6 +229,7 @@ export function AuthProvider({ children }) {
       updatePassword,
       updateProfile,
       deleteAccount,
+      completeNativeAuthUrl,
     }}>
       {children}
     </AuthContext.Provider>

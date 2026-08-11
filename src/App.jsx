@@ -23,6 +23,7 @@ import PlanPage from "./pages/PlanPage";
 import DecisionsPage from "./pages/DecisionsPage";
 import ChatPage from "./pages/ChatPage";
 import { normalizeRoomCode, sharedRoomAuthPath } from "./utils/roomAccess";
+import NativeAppBridge from "./components/NativeAppBridge";
 
 import "./App.css";
 
@@ -63,6 +64,7 @@ export default function App() {
       <LanguageProvider>
         <AuthProvider>
         <BrowserRouter>
+        <NativeAppBridge />
         <Routes>
           <Route path="/" element={<LandingPage />} />
 

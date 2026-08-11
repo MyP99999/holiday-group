@@ -17,6 +17,54 @@ Create a production build with:
 npm run build
 ```
 
+## Native mobile apps (Capacitor)
+
+The repository includes Capacitor 8 projects for Android and iOS. The web app remains unchanged for browser deployment; Capacitor packages the same production build as `HolidaySplits` with application ID `com.holidaysplits.app`.
+
+Install dependencies and synchronize a fresh web build into both native projects:
+
+```bash
+npm install
+npm run cap:sync
+```
+
+For Android, install Android Studio and its SDK, then run:
+
+```bash
+npm run cap:android
+```
+
+That command builds the React app, synchronizes plugins/assets, and opens `android/` in Android Studio. Select an emulator or connected phone and press Run. `npm run cap:run:android` is the command-line alternative once an emulator/device is available.
+
+iOS compilation and signing require macOS with Xcode. On a Mac, install dependencies and run:
+
+```bash
+npm run cap:ios
+```
+
+Choose your Apple developer team in Xcode under **Signing & Capabilities**, select a simulator or device, and press Run. For store releases, create a signed Android App Bundle in Android Studio or an iOS Archive in Xcode. Keep keystores and signing credentials outside Git; the native ignore files already exclude them.
+
+Capacitor 8 requires Node.js 22 or newer. The generated Android project targets SDK 36 and supports Android API 24+, while the generated iOS package supports iOS 15+. Android development currently requires Android Studio 2025.2.1 or newer; iOS development requires Xcode 26 or newer.
+
+When the logo changes, regenerate the app icons and light/dark splash screens with:
+
+```bash
+npm run cap:assets
+npm run cap:sync
+```
+
+### Required Supabase mobile redirect
+
+In **Supabase Dashboard → Authentication → URL Configuration → Redirect URLs**, add:
+
+```text
+com.holidaysplits.app://**
+```
+
+This lets Google sign-in, email confirmation, and password recovery return from the device browser to the installed app. Keep the existing web redirect URLs as well. Native Google sign-in uses the system authentication browser; the Google provider callback remains the Supabase callback already configured for the web app.
+
+`REACT_APP_PUBLIC_SITE_URL` defaults to `https://holidaysplits.com` and is used when the native app creates shareable room invitations. Set it in `.env` only if the public production URL changes. As with every Create React App variable, run `npm run cap:sync` after changing it so the value is embedded in the native web bundle.
+
 ## Product modes
 
 - **Local trip:** no account; each named trip is stored in this browser.
@@ -60,6 +108,7 @@ Add only these browser-safe variables to the Vercel project's **Production** and
 REACT_APP_SUPABASE_URL
 REACT_APP_SUPABASE_ANON_KEY
 REACT_APP_GOOGLE_AUTH_ENABLED
+REACT_APP_PUBLIC_SITE_URL
 ```
 
 Do not upload the local `.env` file or add `SUPABASE_SECRET_KEY`, `SUPABASE_ACCESS_TOKEN`, SMTP/Resend credentials, or Vercel credentials to the frontend project. `.vercelignore` provides an additional safeguard for CLI deployments. Redeploy after changing Vercel environment variables because Create React App embeds `REACT_APP_` values during the build.

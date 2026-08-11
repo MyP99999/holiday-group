@@ -1,0 +1,14 @@
+{
+  "appId": "com.holidaysplits.app",
+  "appName": "HolidaySplits",
+  "webDir": "build",
+  "backgroundColor": "#fbfaf8",
+  "loggingBehavior": "debug",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "LIGHT",
+      "hidden": false
+    }
+  }
+}

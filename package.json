@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/browser": "^8.0.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@supabase/supabase-js": "^2.112.2",
     "@vercel/analytics": "^1.2.2",
     "react": "^18.2.0",
@@ -15,7 +20,14 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "test:ci": "react-scripts test --watchAll=false"
+    "test:ci": "react-scripts test --watchAll=false",
+    "cap:sync": "npm run build && cap sync && node scripts/fix-capacitor-ios-paths.js",
+    "cap:copy": "npm run build && cap copy",
+    "cap:assets": "capacitor-assets generate --android --ios --iconBackgroundColor #fbfaf8 --iconBackgroundColorDark #101d36 --splashBackgroundColor #fbfaf8 --splashBackgroundColorDark #101d36",
+    "cap:android": "npm run cap:sync && cap open android",
+    "cap:ios": "npm run cap:sync && cap open ios",
+    "cap:run:android": "npm run cap:sync && cap run android",
+    "cap:run:ios": "npm run cap:sync && cap run ios"
   },
   "browserslist": {
     "production": [
@@ -28,5 +40,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.0"
   }
 }

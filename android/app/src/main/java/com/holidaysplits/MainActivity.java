@@ -1,4 +1,4 @@
-package com.holidaysplits.app;
+package com.HolidaySplits;
 
 import com.getcapacitor.BridgeActivity;
 

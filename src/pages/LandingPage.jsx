@@ -205,6 +205,13 @@ export default function LandingPage() {
               <button onClick={() => navigate(user ? "/profile" : "/online")}>{user ? t("profile") : t("sign_in")}</button>
             )}
           </div>
+          <div className="footer-column">
+            <strong>Legal &amp; support</strong>
+            <button onClick={() => navigate("/privacy")}>Privacy Policy</button>
+            <button onClick={() => navigate("/terms")}>Terms of Service</button>
+            <button onClick={() => navigate("/support")}>Support</button>
+            <button onClick={() => navigate("/delete-account")}>Delete Account</button>
+          </div>
           <div className="footer-column footer-socials">
             <strong>{t("footer_follow")}</strong>
             <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer">Instagram <small>@holidaysplits</small></a>

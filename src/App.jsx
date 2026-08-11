@@ -22,6 +22,10 @@ import SettlePage from "./pages/SettlePage";
 import PlanPage from "./pages/PlanPage";
 import DecisionsPage from "./pages/DecisionsPage";
 import ChatPage from "./pages/ChatPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import SupportPage from "./pages/SupportPage";
+import DeleteAccountPage from "./pages/DeleteAccountPage";
 import { normalizeRoomCode, sharedRoomAuthPath } from "./utils/roomAccess";
 import NativeAppBridge from "./components/NativeAppBridge";
 
@@ -67,6 +71,10 @@ export default function App() {
         <NativeAppBridge />
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/delete-account" element={<DeleteAccountPage />} />
 
           {/* Offline — multiple named sessions */}
           <Route path="/offline" element={<OfflineSessionsPage />} />

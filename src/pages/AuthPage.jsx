@@ -173,6 +173,12 @@ export default function AuthPage() {
       </div>
 
       <p className="lobby-note">{t("account_sync_note")}</p>
+      <nav className="auth-legal-links" aria-label="Legal and support">
+        <button type="button" onClick={() => navigate("/privacy")}>Privacy</button>
+        <button type="button" onClick={() => navigate("/terms")}>Terms</button>
+        <button type="button" onClick={() => navigate("/support")}>Support</button>
+        <button type="button" onClick={() => navigate("/delete-account")}>Delete account</button>
+      </nav>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 
-export const NATIVE_APP_ID = "com.holidaysplits.app";
+export const NATIVE_APP_ID = "com.HolidaySplits";
+export const NATIVE_AUTH_SCHEME = "com.holidaysplits.app";
 export const NATIVE_AUTH_ERROR_KEY = "holidaysplits:native-auth-error";
 
 const productionWebOrigin = String(
@@ -25,7 +26,7 @@ export function nativeAuthRedirect(returnPath, mode = "auth") {
     returnPath: safeReturnPath(returnPath),
     mode,
   });
-  return `${NATIVE_APP_ID}://auth/callback?${params}`;
+  return `${NATIVE_AUTH_SCHEME}://auth/callback?${params}`;
 }
 
 export function authRedirectFor(returnPath, mode = "auth") {

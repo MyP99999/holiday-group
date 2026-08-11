@@ -12,6 +12,9 @@ export function useAuth() {
 function userFromSession(session, profile) {
   const authUser = session?.user;
   if (!authUser) return null;
+  const providers = Array.isArray(authUser.app_metadata?.providers)
+    ? authUser.app_metadata.providers
+    : [authUser.app_metadata?.provider].filter(Boolean);
   return {
     id: authUser.id,
     email: authUser.email,
@@ -21,6 +24,7 @@ function userFromSession(session, profile) {
       || authUser.email?.split("@")[0]
       || "Member",
     avatarUrl: profile?.avatar_url || authUser.user_metadata?.avatar_url || "",
+    usesPassword: providers.length === 0 || providers.includes("email"),
   };
 }
 
@@ -164,17 +168,26 @@ export function AuthProvider({ children }) {
 
   const deleteAccount = async (password) => {
     const email = session?.user?.email;
-    if (!email || !password) throw new Error("Enter your password to continue.");
+    if (!email) throw new Error("Your signed-in account could not be verified.");
+    const providers = Array.isArray(session.user.app_metadata?.providers)
+      ? session.user.app_metadata.providers
+      : [session.user.app_metadata?.provider].filter(Boolean);
+    const usesPassword = providers.length === 0 || providers.includes("email");
+    let accessToken = session.access_token;
 
-    const { data: reauthenticated, error: passwordError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (passwordError) throw new Error("That password is not correct.");
+    if (usesPassword) {
+      if (!password) throw new Error("Enter your password to continue.");
+      const { data: reauthenticated, error: passwordError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (passwordError) throw new Error("That password is not correct.");
+      accessToken = reauthenticated.session?.access_token;
+    }
 
-    const accessToken = reauthenticated.session?.access_token;
+    if (!accessToken) throw new Error("Your session expired. Sign in again before deleting your account.");
     const { data, error } = await supabase.functions.invoke("delete-account", {
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (error) {
       let message = error.message;

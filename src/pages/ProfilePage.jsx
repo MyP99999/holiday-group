@@ -19,6 +19,7 @@ export default function ProfilePage() {
     deleteAccount,
   } = useAuth();
   const recovering = recoveryMode || searchParams.get("mode") === "recovery";
+  const deletionNeedsPassword = user?.usesPassword !== false;
 
   const [displayName, setDisplayName] = useState(user?.name || "");
   const [profileState, setProfileState] = useState({ busy: false, error: "", message: "" });
@@ -206,6 +207,7 @@ export default function ProfilePage() {
               <div><h2>{t("danger_zone")}</h2><p>{t("delete_account_desc")}</p></div>
               <button className="button danger-outline" type="button" onClick={openDeleteDialog}>{t("delete_account")}</button>
             </div>
+            <p className="profile-deletion-help">Unable to delete here? Read the <button className="text-link" type="button" onClick={() => navigate("/delete-account")}>account deletion instructions</button>.</p>
           </section>
         </div>
       </main>
@@ -219,21 +221,27 @@ export default function ProfilePage() {
             <h2 id="delete-account-title">{t("delete_account_confirm_title")}</h2>
             <p>{t("delete_account_confirm_desc")}</p>
             <form onSubmit={confirmDelete}>
-              <label htmlFor="delete-account-password">{t("confirm_with_password")}</label>
-              <input
-                ref={deletePasswordRef}
-                id="delete-account-password"
-                type="password"
-                autoComplete="current-password"
-                value={deletePassword}
-                onChange={(event) => { setDeletePassword(event.target.value); setDeleteState((current) => ({ ...current, error: "" })); }}
-                placeholder={t("enter_password_to_delete")}
-                required
-              />
+              {deletionNeedsPassword ? (
+                <>
+                  <label htmlFor="delete-account-password">{t("confirm_with_password")}</label>
+                  <input
+                    ref={deletePasswordRef}
+                    id="delete-account-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={deletePassword}
+                    onChange={(event) => { setDeletePassword(event.target.value); setDeleteState((current) => ({ ...current, error: "" })); }}
+                    placeholder={t("enter_password_to_delete")}
+                    required
+                  />
+                </>
+              ) : (
+                <p className="oauth-delete-note">Your active Google sign-in will be used to verify this permanent deletion.</p>
+              )}
               {deleteState.error && <p className="form-error" role="alert">{deleteState.error}</p>}
               <div className="confirm-actions">
                 <button className="button secondary" type="button" onClick={() => setDeleteOpen(false)} disabled={deleteState.busy}>{t("cancel")}</button>
-                <button className="button danger" type="submit" disabled={deleteState.busy || !deletePassword}>
+                <button className="button danger" type="submit" disabled={deleteState.busy || (deletionNeedsPassword && !deletePassword)}>
                   {deleteState.busy ? t("deleting") : t("delete_forever")}
                 </button>
               </div>

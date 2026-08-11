@@ -1,6 +1,10 @@
-import { nativeAuthRedirect, nativeAuthResult } from "./nativeApp";
+import { NATIVE_APP_ID, nativeAuthRedirect, nativeAuthResult } from "./nativeApp";
 
 describe("native app auth links", () => {
+  test("uses the required native application ID", () => {
+    expect(NATIVE_APP_ID).toBe("com.HolidaySplits");
+  });
+
   test("creates a callback that preserves the requested room destination", () => {
     const redirect = nativeAuthRedirect("/online/lobby?room=ABC123", "oauth");
     const parsed = new URL(redirect);

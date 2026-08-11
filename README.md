@@ -19,7 +19,7 @@ npm run build
 
 ## Native mobile apps (Capacitor)
 
-The repository includes Capacitor 8 projects for Android and iOS. The web app remains unchanged for browser deployment; Capacitor packages the same production build as `HolidaySplits` with application ID `com.holidaysplits.app`.
+The repository includes Capacitor 8 projects for Android and iOS. The web app remains unchanged for browser deployment; Capacitor packages the same production build as `HolidaySplits` with application ID `com.HolidaySplits`.
 
 Install dependencies and synchronize a fresh web build into both native projects:
 
@@ -64,6 +64,12 @@ com.holidaysplits.app://**
 This lets Google sign-in, email confirmation, and password recovery return from the device browser to the installed app. Keep the existing web redirect URLs as well. Native Google sign-in uses the system authentication browser; the Google provider callback remains the Supabase callback already configured for the web app.
 
 `REACT_APP_PUBLIC_SITE_URL` defaults to `https://holidaysplits.com` and is used when the native app creates shareable room invitations. Set it in `.env` only if the public production URL changes. As with every Create React App variable, run `npm run cap:sync` after changing it so the value is embedded in the native web bundle.
+
+### Android production signing
+
+The release build reads its signing configuration from the Git-ignored `android/key.properties` file and its private key from `android/release/holidaysplits-upload.jks`. Back up both files together in an encrypted location or password manager attachment. Do not commit, email, or lose them; future APK updates must use the same signing identity.
+
+Before each new Android release, increase `versionCode` and update `versionName` in `android/app/build.gradle`, run `npm run cap:sync`, and build the release in Android Studio. Upload the `.aab` to Google Play; use the signed `.apk` for direct installation or another APK-based distribution channel.
 
 ## Product modes
 

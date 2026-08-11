@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { normalizeTripState } from "../storage/tripState";
+import { appendActivity, createActivityEntry } from "../utils/activityLog";
 
 export const AppContext = createContext(null);
 
@@ -103,6 +104,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
   const effectiveMemberId = currentMemberId || state.currentMemberId || "";
   const currentPerson = state.people.find((person) => String(person.id) === String(effectiveMemberId)) || null;
   const canManageMembers = ownerMode || currentPerson?.role === "admin";
+  const canModerateMembers = Boolean(canManageMembers && typeof driver.moderateMember === "function");
   const canEditMemberProfile = (memberId) => {
     const target = state.people.find((person) => String(person.id) === String(memberId));
     return Boolean(
@@ -145,14 +147,41 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
     return true;
   };
 
+  const moderateMember = async (memberId, action) => {
+    if (!canModerateMembers || !["kick", "ban", "unban"].includes(action)) return false;
+    const target = stateRef.current?.people.find((person) => String(person.id) === String(memberId));
+    setSyncError("");
+    setPendingWrites((count) => count + 1);
+    try {
+      await driver.moderateMember(memberId, action);
+      const refreshed = normalizeTripState(await driver.read());
+      const nextState = appendActivity(refreshed, createActivityEntry({
+        type: action === "kick" ? "member_kicked" : action === "ban" ? "member_banned" : "member_unbanned",
+        actor: currentPerson,
+        subject: target,
+      }));
+      await driver.write(nextState);
+      stateRef.current = nextState;
+      setState(nextState);
+      return true;
+    } catch (error) {
+      setSyncError(error.message || "The member action could not be completed.");
+      throw error;
+    } finally {
+      setPendingWrites((count) => Math.max(0, count - 1));
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       ...state,
       currentMemberId: effectiveMemberId,
       currentPerson,
       canManageMembers,
+      canModerateMembers,
       canEditMemberProfile,
       updateMemberProfile,
+      moderateMember,
       updateTripState,
       isSyncing: pendingWrites > 0,
       syncError,

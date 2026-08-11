@@ -10,7 +10,9 @@ import { useApp } from "../context/AppContext";
 import { convert, fmt, getExpenseShares } from "../utils";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
-import { removeExpenseFromTripState } from "../utils/expenseDeletion";
+import { removeExpenseFromTripState, updateExpenseInTripState } from "../utils/expenseDeletion";
+import { expenseToForm, validateExpenseForm } from "../utils/expenseForm";
+import { appendActivity, changedActivityFields, createActivityEntry } from "../utils/activityLog";
 
 const emptyForm = {
   description: "",
@@ -28,10 +30,13 @@ export default function ExpensesPage() {
   const { t, locale } = useLanguage();
   const { rateDate, status: rateStatus } = useCurrencyRates();
   const formRef = useRef(null);
-  const { people, expenses, setExpenses, updateTripState } = useApp();
+  const { people, expenses, setExpenses, updateTripState, currentPerson } = useApp();
   const [displayCurrency, setDisplayCurrency] = useState("EUR");
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [expenseToEdit, setExpenseToEdit] = useState(null);
+  const [editForm, setEditForm] = useState(emptyForm);
+  const [editError, setEditError] = useState("");
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [expenseMode, setExpenseMode] = useState(() => {
     const requestedMode = location.state?.expenseMode;
@@ -54,16 +59,21 @@ export default function ExpensesPage() {
   }, [location.state]);
 
   useEffect(() => {
-    if (!expenseToDelete) return undefined;
+    if (!expenseToDelete && !expenseToEdit) return undefined;
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event) => event.key === "Escape" && setExpenseToDelete(null);
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      setExpenseToDelete(null);
+      setExpenseToEdit(null);
+      setEditError("");
+    };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [expenseToDelete]);
+  }, [expenseToDelete, expenseToEdit]);
 
   const openExpenseMode = (mode) => {
     setExpenseMode(mode);
@@ -79,29 +89,20 @@ export default function ExpensesPage() {
 
   const saveExpense = () => {
     setError("");
-    const amount = Number(form.amount);
-    if (!form.description.trim() || !amount || !form.paidById || !form.participantIds.length) {
-      setError("Add a description, amount, payer and at least one contributor.");
+    const result = validateExpenseForm(form);
+    if (result.error === "required") {
+      setError(t("expense_form_required"));
+      return;
+    }
+    if (result.error === "shares_total") {
+      setError(t("custom_shares_must_total", { amount: fmt(result.amount, form.currency) }));
       return;
     }
 
-    let shares;
-    if (form.splitMode === "custom") {
-      shares = Object.fromEntries(form.participantIds.map((id) => [String(id), Number(form.shares[String(id)]) || 0]));
-      const shareTotal = Object.values(shares).reduce((sum, value) => sum + value, 0);
-      if (Math.abs(shareTotal - amount) > 0.01) {
-        setError(`Custom shares must add up to ${fmt(amount, form.currency)}.`);
-        return;
-      }
-    }
-
+    const { shares, ...expenseFields } = result.value;
     setExpenses((current) => [...current, {
       id: Date.now(),
-      description: form.description.trim(),
-      amount,
-      currency: form.currency,
-      paidById: form.paidById,
-      participantIds: form.participantIds,
+      ...expenseFields,
       ...(shares ? { shares } : {}),
       source: "manual",
       date: new Date().toISOString(),
@@ -110,6 +111,68 @@ export default function ExpensesPage() {
   };
 
   const personName = (id) => people.find((person) => String(person.id) === String(id))?.name || "Unknown";
+  const expenseSourceLabel = (expense) => (
+    expense.source === "scan"
+      ? t("scanned_receipt")
+      : expense.source === "restaurant"
+        ? t("restaurant_split")
+        : t("shared_expense")
+  );
+  const openExpenseEditor = (expense) => {
+    setExpenseToEdit(expense);
+    setEditForm(expenseToForm(expense));
+    setEditError("");
+  };
+  const closeExpenseEditor = () => {
+    setExpenseToEdit(null);
+    setEditError("");
+  };
+  const toggleEditParticipant = (personId) => {
+    const id = String(personId);
+    setEditForm((current) => ({
+      ...current,
+      participantIds: current.participantIds.includes(id)
+        ? current.participantIds.filter((selectedId) => selectedId !== id)
+        : [...current.participantIds, id],
+    }));
+  };
+  const saveEditedExpense = (event) => {
+    event.preventDefault();
+    if (!expenseToEdit) return;
+    setEditError("");
+    const result = validateExpenseForm(editForm);
+    if (result.error === "required") {
+      setEditError(t("expense_form_required"));
+      return;
+    }
+    if (result.error === "shares_total") {
+      setEditError(t("custom_shares_must_total", { amount: fmt(result.amount, editForm.currency) }));
+      return;
+    }
+
+    const fields = changedActivityFields(expenseToEdit, result.value, {
+      description: "description",
+      amount: "amount",
+      currency: "currency",
+      paidById: "payer",
+    });
+    const beforeSplit = JSON.stringify({ participantIds: (expenseToEdit.participantIds || []).map(String).sort(), shares: expenseToEdit.shares || null });
+    const afterSplit = JSON.stringify({ participantIds: result.value.participantIds.map(String).sort(), shares: result.value.shares });
+    if (beforeSplit !== afterSplit) fields.push("split");
+    if (!fields.length) {
+      closeExpenseEditor();
+      return;
+    }
+
+    updateTripState((current) => appendActivity(
+      updateExpenseInTripState(current, expenseToEdit.id, {
+        ...result.value,
+        editedAt: new Date().toISOString(),
+      }),
+      createActivityEntry({ type: "expense_edited", actor: currentPerson, subject: { ...expenseToEdit, description: result.value.description }, fields })
+    ));
+    closeExpenseEditor();
+  };
   const confirmDeleteExpense = () => {
     if (!expenseToDelete) return;
     updateTripState((current) => removeExpenseFromTripState(current, expenseToDelete.id));
@@ -136,7 +199,7 @@ export default function ExpensesPage() {
           <div className="panel-heading"><div><h2>{t("recent_expenses")}</h2></div></div>
           {expenses.length ? (
             <div className="expense-table" role="table">
-              <div className="expense-table-head" role="row"><span>Description</span><span>Paid by</span><span>Split</span><span>Date</span><span>Amount</span><span /></div>
+              <div className="expense-table-head" role="row"><span>{t("description")}</span><span>{t("paid_by")}</span><span>{t("split_label")}</span><span>{t("date")}</span><span>{t("amount")}</span><span /></div>
               {[...expenses].reverse().map((expense) => {
                 const payerIndex = people.findIndex((person) => String(person.id) === String(expense.paidById));
                 const payer = people[payerIndex];
@@ -144,12 +207,15 @@ export default function ExpensesPage() {
                 const shares = getExpenseShares(expense);
                 return (
                   <div className="expense-table-row" role="row" key={expense.id}>
-                    <span className="expense-primary"><strong>{expense.description}</strong><small>{expense.source === "scan" ? "Scanned receipt" : expense.source === "restaurant" ? "Restaurant split" : "Shared expense"}</small></span>
+                    <span className="expense-primary"><strong>{expense.description}</strong><small>{expenseSourceLabel(expense)}{expense.editedAt ? ` · ${t("edited")}` : ""}</small></span>
                     <span className="payer-cell"><PersonAvatar person={payer} people={people} index={payerIndex} size="small" />{personName(expense.paidById)}</span>
-                    <span>{expense.shares ? "Custom" : `${shares.length} ${shares.length === 1 ? "person" : "people"}`}</span>
+                    <span>{expense.shares ? t("custom_split") : t(shares.length === 1 ? "person_count" : "people_count", { count: shares.length })}</span>
                     <span>{expense.date ? new Date(expense.date).toLocaleDateString(locale, { day: "2-digit", month: "short" }) : "—"}</span>
                     <span className="amount-cell"><strong>{fmt(expense.amount, expense.currency)}</strong>{expense.currency !== displayCurrency && <small>{fmt(converted, displayCurrency)}</small>}</span>
-                    <button className="row-action" onClick={() => setExpenseToDelete(expense)}>{t("remove")}</button>
+                    <span className="expense-row-actions">
+                      <button className="row-action" onClick={() => openExpenseEditor(expense)}>{t("edit")}</button>
+                      <button className="row-action" onClick={() => setExpenseToDelete(expense)}>{t("remove")}</button>
+                    </span>
                   </div>
                 );
               })}
@@ -198,6 +264,49 @@ export default function ExpensesPage() {
           {expenseMode === "restaurant" && <RestaurantExpenseForm />}
         </section>
       </div>
+
+      {expenseToEdit && (
+        <div className="confirm-overlay" onMouseDown={(event) => event.target === event.currentTarget && closeExpenseEditor()}>
+          <form className="confirm-dialog expense-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-expense-title" aria-describedby="edit-expense-description" onSubmit={saveEditedExpense}>
+            <div className="expense-edit-heading">
+              <div><span>{expenseSourceLabel(expenseToEdit)}</span><h2 id="edit-expense-title">{t("edit_expense")}</h2></div>
+              <b>{fmt(expenseToEdit.amount, expenseToEdit.currency)}</b>
+            </div>
+            <p id="edit-expense-description">{t("edit_expense_desc")}</p>
+            <div className="form-stack">
+              <label className="field-group"><span className="field-label">{t("description")}</span><input autoFocus value={editForm.description} onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))} placeholder={t("what_for")} /></label>
+              <div className="amount-grid">
+                <label className="field-group"><span className="field-label">{t("amount")}</span><input type="number" min="0.01" step="0.01" value={editForm.amount} onChange={(event) => setEditForm((current) => ({ ...current, amount: event.target.value }))} placeholder="0.00" /></label>
+                <label className="field-group"><span className="field-label">{t("currency")}</span><CurrencySelect value={editForm.currency} onChange={(currency) => setEditForm((current) => ({ ...current, currency }))} /></label>
+              </div>
+              <label className="field-group"><span className="field-label">{t("paid_by")}</span><select value={editForm.paidById} onChange={(event) => setEditForm((current) => ({ ...current, paidById: event.target.value }))}>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+              <div className="split-mode" aria-label={t("split_method")}>
+                <button type="button" className={editForm.splitMode === "equal" ? "active" : ""} onClick={() => setEditForm((current) => ({ ...current, splitMode: "equal" }))}>{t("split_equally")}</button>
+                <button type="button" className={editForm.splitMode === "custom" ? "active" : ""} onClick={() => setEditForm((current) => ({ ...current, splitMode: "custom" }))}>{t("custom_amounts")}</button>
+              </div>
+              <div className="contributors-heading"><span className="field-label">{t("split_between")}</span><button type="button" className="text-link" onClick={() => setEditForm((current) => ({ ...current, participantIds: people.map((person) => String(person.id)) }))}>{t("select_all")}</button></div>
+              <div className={`contributor-grid${editForm.splitMode === "custom" ? " custom" : ""}`}>
+                {people.map((person) => {
+                  const personId = String(person.id);
+                  const selected = editForm.participantIds.includes(personId);
+                  return (
+                    <div className={`contributor-control${selected ? " selected" : ""}`} key={person.id}>
+                      <button type="button" onClick={() => toggleEditParticipant(personId)} aria-pressed={selected}><span className="check-box">{selected ? "✓" : ""}</span>{person.name}</button>
+                      {editForm.splitMode === "custom" && selected && <input aria-label={t("person_share", { name: person.name })} type="number" min="0" step="0.01" placeholder="0.00" value={editForm.shares[personId] || ""} onChange={(event) => setEditForm((current) => ({ ...current, shares: { ...current.shares, [personId]: event.target.value } }))} />}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="expense-edit-impact">{t("edit_expense_impact")}</p>
+            {editError && <p className="form-error" role="alert">{editError}</p>}
+            <div className="confirm-actions">
+              <button type="button" className="button secondary" onClick={closeExpenseEditor}>{t("cancel")}</button>
+              <button type="submit" className="button primary">{t("save_changes")}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {expenseToDelete && (
         <div className="confirm-overlay" onMouseDown={(event) => event.target === event.currentTarget && setExpenseToDelete(null)}>

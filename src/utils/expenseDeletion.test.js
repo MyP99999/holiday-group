@@ -1,5 +1,5 @@
 import { calculateSettlements } from "../utils";
-import { removeExpenseFromTripState } from "./expenseDeletion";
+import { removeExpenseFromTripState, updateExpenseInTripState } from "./expenseDeletion";
 
 function sharedExpense(id, amount) {
   return {
@@ -53,5 +53,42 @@ describe("expense deletion", () => {
       expect.objectContaining({ id: "payment", amountEUR: 50 }),
     ]);
     expect(calculateSettlements(result.people, result.expenses, result.settlementPayments).transactions).toEqual([]);
+  });
+});
+
+describe("expense editing", () => {
+  test("preserves metadata and reconciles settlements after a financial change", () => {
+    const state = tripState(
+      [{ ...sharedExpense("receipt-item", 200), source: "scan", receiptName: "Dinner" }],
+      [{ id: "payment", expenseId: "receipt-item", fromId: "payer", toId: "recipient", amountEUR: 100 }]
+    );
+
+    const result = updateExpenseInTripState(state, "receipt-item", {
+      description: "Dinner corrected",
+      amount: 100,
+      shares: null,
+      editedAt: "2026-08-11T12:00:00.000Z",
+    });
+
+    expect(result.expenses).toEqual([
+      expect.objectContaining({
+        id: "receipt-item",
+        description: "Dinner corrected",
+        amount: 100,
+        source: "scan",
+        receiptName: "Dinner",
+        editedAt: "2026-08-11T12:00:00.000Z",
+      }),
+    ]);
+    expect(result.expenses[0]).not.toHaveProperty("shares");
+    expect(result.settlementPayments).toEqual([
+      expect.objectContaining({ id: "payment", amountEUR: 50 }),
+    ]);
+    expect(result.paymentRoutes).toEqual({});
+  });
+
+  test("leaves state untouched when the expense no longer exists", () => {
+    const state = tripState([sharedExpense("keep", 20)], []);
+    expect(updateExpenseInTripState(state, "missing", { amount: 40 })).toBe(state);
   });
 });

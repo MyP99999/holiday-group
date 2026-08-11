@@ -12,6 +12,18 @@ function friendlyError(error) {
   if (message.includes("ALREADY_IN_TRIP")) {
     return new Error("You already joined this trip.");
   }
+  if (message.includes("TRIP_BANNED")) {
+    return new Error("An admin has blocked this account from joining the trip.");
+  }
+  if (message.includes("CANNOT_MODERATE_SELF")) {
+    return new Error("Admins cannot remove themselves from a trip.");
+  }
+  if (message.includes("MEMBER_NOT_CLAIMED")) {
+    return new Error("This trip identity is not currently connected to an account.");
+  }
+  if (message.includes("BAN_NOT_FOUND")) {
+    return new Error("This account is no longer banned from the trip.");
+  }
   return new Error(message);
 }
 
@@ -91,6 +103,14 @@ export function supabaseRoomDriver(roomCode) {
         p_iban: details.iban || "",
         p_payment_methods: details.paymentMethods || [],
         p_payment_note: details.paymentNote || "",
+      });
+    },
+
+    moderateMember(memberId, action) {
+      return rpc("moderate_trip_member", {
+        p_code: code,
+        p_member_id: memberId,
+        p_action: action,
       });
     },
 

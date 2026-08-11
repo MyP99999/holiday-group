@@ -1,9 +1,11 @@
 import {
   canConfirmSettlementPayment,
+  editablePaymentLimitEUR,
   getSettlementPaymentReasons,
   normalizeSettlementPaymentReason,
   reconcileSettlementPayments,
   resolveSettlementPaymentAmountEUR,
+  toLocalDateTimeInput,
 } from "./settlementPayments";
 import { calculateSettlements } from "../utils";
 
@@ -97,5 +99,22 @@ describe("settlement payment confirmation", () => {
     expect(reconcileSettlementPayments(people, remainingExpense, payments)).toEqual([
       expect.objectContaining({ id: "paid", amountEUR: 50, isPartial: true }),
     ]);
+  });
+
+  test("limits an edited history payment to the debt before that payment", () => {
+    const people = [{ id: "payer" }, { id: "recipient" }];
+    const expenses = [{ amount: 200, currency: "EUR", paidById: "recipient", participantIds: ["payer", "recipient"] }];
+    const payments = [
+      { id: "earlier", fromId: "payer", toId: "recipient", amountEUR: 20 },
+      { id: "editing", fromId: "payer", toId: "recipient", amountEUR: 40 },
+    ];
+
+    expect(editablePaymentLimitEUR(people, expenses, payments, "editing")).toBe(80);
+    expect(editablePaymentLimitEUR(people, expenses, payments, "missing")).toBe(0);
+  });
+
+  test("formats stored payment dates for a datetime-local input", () => {
+    expect(toLocalDateTimeInput("2026-08-11T12:34:00.000Z")).toMatch(/^2026-08-11T\d{2}:34$/);
+    expect(toLocalDateTimeInput("invalid")).toBe("");
   });
 });

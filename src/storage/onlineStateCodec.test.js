@@ -40,4 +40,39 @@ describe("online trip state compatibility", () => {
     expect(restored.settlementPayments).toEqual([]);
     expect(restored.logisticsPayments).toEqual(original.logisticsPayments);
   });
+
+  test("stores activity entries alongside payments without exposing them as payments", () => {
+    const original = {
+      settlementPayments: [{ id: "payment-1", source: "settlement" }],
+      logisticsPayments: [],
+      activityLog: [{ id: "activity-1", type: "expense_edited", actorName: "Maya" }],
+    };
+    const packed = packOnlineTripState(original);
+    expect(packed.settlementPayments).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "activity-1", storageType: "activity-entry" }),
+    ]));
+
+    const restored = unpackOnlineTripState(packed);
+    expect(restored.settlementPayments).toEqual(original.settlementPayments);
+    expect(restored.activityLog).toEqual(original.activityLog);
+  });
+
+  test("stores trip dates without exposing the metadata as a payment", () => {
+    const original = {
+      settlementPayments: [],
+      logisticsPayments: [],
+      activityLog: [],
+      tripStartDate: "2026-08-11",
+      tripEndDate: "2026-08-15",
+    };
+    const packed = packOnlineTripState(original);
+    expect(packed.settlementPayments).toEqual([
+      expect.objectContaining({ id: "__trip-dates__", storageType: "trip-dates" }),
+    ]);
+
+    const restored = unpackOnlineTripState(packed);
+    expect(restored.tripStartDate).toBe(original.tripStartDate);
+    expect(restored.tripEndDate).toBe(original.tripEndDate);
+    expect(restored.settlementPayments).toEqual([]);
+  });
 });

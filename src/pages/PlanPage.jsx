@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
@@ -6,8 +6,10 @@ import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
-import { createId } from "../storage/tripState";
+import { createId, normalizeVehicleSeats } from "../storage/tripState";
 import { convert, fmt } from "../utils";
+import { appendActivity, changedActivityFields, createActivityEntry } from "../utils/activityLog";
+import { validateTripDates } from "../utils/tripDates";
 import {
   buildLogisticsExpenses,
   getFlightShares,
@@ -60,9 +62,9 @@ export default function PlanPage() {
   const { t } = useLanguage();
   const { rateDate } = useCurrencyRates();
   const {
-    people, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights,
+    people, tripStartDate, tripEndDate, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights,
     otherCosts, setOtherCosts, logisticsPayments, setLogisticsPayments, settlementPayments,
-    currentMemberId, canManageMembers,
+    currentMemberId, currentPerson, canManageMembers, updateTripState,
   } = useApp();
   const [showStayForm, setShowStayForm] = useState(false);
   const [showCarForm, setShowCarForm] = useState(false);
@@ -74,6 +76,10 @@ export default function PlanPage() {
   const [otherForm, setOtherForm] = useState(emptyOtherCost);
   const [paymentDraft, setPaymentDraft] = useState(null);
   const [paymentError, setPaymentError] = useState("");
+  const [tripDateForm, setTripDateForm] = useState({ startDate: tripStartDate || "", endDate: tripEndDate || "" });
+  const [tripDateMessage, setTripDateMessage] = useState("");
+  const [stayEdit, setStayEdit] = useState(null);
+  const [carEdit, setCarEdit] = useState(null);
   const [outputCurrency, setOutputCurrency] = useState("EUR");
   const defaultPayerId = String(currentMemberId || people[0]?.id || "");
 
@@ -166,6 +172,41 @@ export default function PlanPage() {
     setShowOtherForm(true);
   };
 
+  useEffect(() => {
+    if (!stayEdit && !carEdit) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      setStayEdit(null);
+      setCarEdit(null);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [stayEdit, carEdit]);
+
+  useEffect(() => {
+    setTripDateForm({ startDate: tripStartDate || "", endDate: tripEndDate || "" });
+  }, [tripStartDate, tripEndDate]);
+
+  const saveTripDates = (event) => {
+    event.preventDefault();
+    const result = validateTripDates(tripDateForm.startDate, tripDateForm.endDate);
+    if (result.error) {
+      setTripDateMessage(t(result.error === "range" ? "trip_date_range_invalid" : "trip_date_invalid"));
+      return;
+    }
+    updateTripState((current) => ({
+      ...current,
+      tripStartDate: result.value.startDate,
+      tripEndDate: result.value.endDate,
+    }));
+    setTripDateMessage(t("trip_dates_saved"));
+  };
+
   const createStay = () => {
     if (!stayForm.name.trim()) return;
     setAccommodations((current) => [...current, {
@@ -188,6 +229,46 @@ export default function PlanPage() {
   const updateStay = (stayId, updater) => setAccommodations((current) => current.map((stay) =>
     String(stay.id) === String(stayId) ? updater(stay) : stay
   ));
+
+  const openStayEditor = (stay) => setStayEdit({
+    id: stay.id,
+    name: stay.name || "",
+    location: stay.location || "",
+    nights: stay.nights || 1,
+    price: stay.price ?? "",
+    currency: stay.currency || "EUR",
+    paidById: stay.paidById || "",
+    splitMode: stay.splitMode === "rooms" ? "rooms" : "people",
+  });
+
+  const saveStayEdit = (event) => {
+    event.preventDefault();
+    const stay = accommodations.find((item) => String(item.id) === String(stayEdit?.id));
+    if (!stay || !stayEdit?.name.trim()) return;
+    const nextStay = {
+      ...stay,
+      name: stayEdit.name.trim(),
+      location: stayEdit.location.trim(),
+      nights: Math.max(1, Math.trunc(Number(stayEdit.nights) || 1)),
+      price: Math.max(0, Number(stayEdit.price) || 0),
+      currency: stayEdit.currency,
+      paidById: stayEdit.paidById,
+      splitMode: stayEdit.splitMode,
+    };
+    const fields = changedActivityFields(stay, nextStay, {
+      name: "name", location: "location", nights: "nights", price: "amount",
+      currency: "currency", paidById: "payer", splitMode: "split",
+    });
+    if (!fields.length) {
+      setStayEdit(null);
+      return;
+    }
+    updateTripState((current) => appendActivity({
+      ...current,
+      accommodations: current.accommodations.map((item) => String(item.id) === String(stay.id) ? nextStay : item),
+    }, createActivityEntry({ type: "stay_edited", actor: currentPerson, subject: stay, fields })));
+    setStayEdit(null);
+  };
 
   const addRoom = (stayId) => updateStay(stayId, (stay) => ({
     ...stay,
@@ -242,7 +323,7 @@ export default function PlanPage() {
     setVehicles((current) => [...current, {
       id: createId("vehicle"),
       name: carForm.name.trim(),
-      seats: Math.max(1, Number(carForm.seats) || 1),
+      seats: normalizeVehicleSeats(carForm.seats),
       driverId: "",
       passengerIds: [],
       rentalEnabled: false,
@@ -254,6 +335,45 @@ export default function PlanPage() {
     }]);
     setCarForm(emptyCar);
     setShowCarForm(false);
+  };
+
+  const openCarEditor = (vehicle) => setCarEdit({
+    id: vehicle.id,
+    name: vehicle.name || "",
+    seats: vehicle.seats || 1,
+    rentalPrice: vehicle.rentalPrice ?? "",
+    rentalCurrency: vehicle.rentalCurrency || "EUR",
+    rentalPaidById: vehicle.rentalPaidById || "",
+  });
+
+  const saveCarEdit = (event) => {
+    event.preventDefault();
+    const vehicle = vehicles.find((item) => String(item.id) === String(carEdit?.id));
+    if (!vehicle || !carEdit?.name.trim()) return;
+    const occupiedSeats = Math.max(1, (vehicle.driverId ? 1 : 0) + vehicle.passengerIds.length);
+    const nextVehicle = {
+      ...vehicle,
+      name: carEdit.name.trim(),
+      seats: normalizeVehicleSeats(carEdit.seats, occupiedSeats),
+      ...(vehicle.rentalEnabled ? {
+        rentalPrice: Math.max(0, Number(carEdit.rentalPrice) || 0),
+        rentalCurrency: carEdit.rentalCurrency,
+        rentalPaidById: carEdit.rentalPaidById,
+      } : {}),
+    };
+    const fields = changedActivityFields(vehicle, nextVehicle, {
+      name: "name", seats: "seats", rentalPrice: "amount",
+      rentalCurrency: "currency", rentalPaidById: "payer",
+    });
+    if (!fields.length) {
+      setCarEdit(null);
+      return;
+    }
+    updateTripState((current) => appendActivity({
+      ...current,
+      vehicles: current.vehicles.map((item) => String(item.id) === String(vehicle.id) ? nextVehicle : item),
+    }, createActivityEntry({ type: "car_edited", actor: currentPerson, subject: vehicle, fields })));
+    setCarEdit(null);
   };
 
   const setDriver = (vehicleId, driverId) => setVehicles((current) => current.map((vehicle) => {
@@ -402,6 +522,11 @@ export default function PlanPage() {
     setPaymentError("");
   };
 
+  const editedVehicle = carEdit ? vehicles.find((vehicle) => String(vehicle.id) === String(carEdit.id)) : null;
+  const minimumEditedCarSeats = editedVehicle
+    ? Math.max(1, (editedVehicle.driverId ? 1 : 0) + editedVehicle.passengerIds.length)
+    : 1;
+
   return (
     <div className="page-stack logistics-page">
       <PageHeader
@@ -409,6 +534,15 @@ export default function PlanPage() {
         description={t("logistics_desc")}
         actions={<><CurrencySelect value={outputCurrency} onChange={setOutputCurrency} /><button className="button primary" onClick={openStayForm}>{t("add_accommodation")}</button></>}
       />
+
+      <section className="trip-dates-panel surface-panel">
+        <div className="trip-dates-copy"><h2>{t("trip_dates")}</h2><p>{t("trip_dates_desc")}</p></div>
+        <form className="trip-dates-form" onSubmit={saveTripDates}>
+          <label><span>{t("trip_start_date")}</span><input type="date" value={tripDateForm.startDate} onChange={(event) => { setTripDateForm((current) => ({ ...current, startDate: event.target.value })); setTripDateMessage(""); }} /></label>
+          <label><span>{t("trip_end_date")}</span><input type="date" value={tripDateForm.endDate} onChange={(event) => { setTripDateForm((current) => ({ ...current, endDate: event.target.value })); setTripDateMessage(""); }} /></label>
+          <div className="trip-dates-actions"><button type="submit" className="button primary small-button">{t("save_trip_dates")}</button>{tripDateMessage && <small role="status">{tripDateMessage}</small>}</div>
+        </form>
+      </section>
 
       {showStayForm && (
         <section className="creator-panel surface-panel">
@@ -487,13 +621,14 @@ export default function PlanPage() {
                 <article className="stay-block" key={stay.id}>
                   <header className="stay-heading">
                     <div><h3>{stay.name}</h3><p>{stay.location || "—"} · {stay.nights} {t("nights").toLowerCase()}</p></div>
-                    <div><strong>{fmt(stayTotal, stay.currency)}</strong><button className="decision-link" onClick={() => startDecision("accommodation", t("choose_accommodation_vote"), { title: stay.name, detail: [stay.location, `${stay.nights} ${t("nights").toLowerCase()}`].filter(Boolean).join(" · "), price: stay.price, currency: stay.currency })}>{t("vote_on_this")}</button><button className="row-action" onClick={() => setAccommodations((current) => current.filter((item) => item.id !== stay.id))}>{t("remove")}</button></div>
+                    <div><strong>{fmt(stayTotal, stay.currency)}</strong><button className="decision-link" onClick={() => startDecision("accommodation", t("choose_accommodation_vote"), { title: stay.name, detail: [stay.location, `${stay.nights} ${t("nights").toLowerCase()}`].filter(Boolean).join(" · "), price: stay.price, currency: stay.currency })}>{t("vote_on_this")}</button><button className="row-action" onClick={() => openStayEditor(stay)}>{t("edit")}</button><button className="row-action" onClick={() => setAccommodations((current) => current.filter((item) => item.id !== stay.id))}>{t("remove")}</button></div>
                   </header>
 
-                  <div className="stay-cost-controls">
-                    <label className="field-group"><span className="field-label">{t("stay_price")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={stay.price} onChange={(event) => updateStay(stay.id, (current) => ({ ...current, price: event.target.value }))} /><CurrencySelect value={stay.currency} onChange={(currency) => updateStay(stay.id, (current) => ({ ...current, currency }))} /></div></label>
-                    <label className="field-group"><span className="field-label">{t("payer")}</span><select value={stay.paidById || ""} onChange={(event) => updateStay(stay.id, (current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
-                    <div className="stay-split-choice"><span className="field-label">{t("split_method")}</span><div><button className={stay.splitMode === "people" ? "active" : ""} onClick={() => updateStay(stay.id, (current) => ({ ...current, splitMode: "people" }))}>{t("split_by_people")}</button><button className={stay.splitMode === "rooms" ? "active" : ""} onClick={() => updateStay(stay.id, (current) => ({ ...current, splitMode: "rooms" }))}>{t("split_by_rooms")}</button></div></div>
+                  <div className="stay-cost-controls logistics-financial-summary">
+                    <div><span className="field-label">{t("stay_price")}</span><strong>{fmt(stayTotal, stay.currency)}</strong></div>
+                    <div><span className="field-label">{t("payer")}</span><strong>{personName(stay.paidById)}</strong></div>
+                    <div><span className="field-label">{t("split_method")}</span><strong>{t(stay.splitMode === "rooms" ? "split_by_rooms" : "split_by_people")}</strong></div>
+                    <button className="button secondary small-button" onClick={() => openStayEditor(stay)}>{t("edit_stay_details")}</button>
                   </div>
 
                   <div className="participation-block">
@@ -544,7 +679,7 @@ export default function PlanPage() {
             {showCarForm && (
               <div className="car-creator">
                 <label><span>{t("car_name")}</span><input autoFocus value={carForm.name} onChange={(event) => setCarForm((current) => ({ ...current, name: event.target.value }))} placeholder="Fiat 500X" /></label>
-                <label><span>{t("seats")}</span><input type="number" min="1" value={carForm.seats} onChange={(event) => setCarForm((current) => ({ ...current, seats: event.target.value }))} /></label>
+                <label><span>{t("seats")}</span><input type="number" min="1" max="60" value={carForm.seats} onChange={(event) => setCarForm((current) => ({ ...current, seats: event.target.value }))} /></label>
                 <button className="button primary small-button" onClick={createCar}>{t("create_car")}</button>
                 <button className="text-link" onClick={() => setShowCarForm(false)}>{t("cancel")}</button>
               </div>
@@ -554,7 +689,7 @@ export default function PlanPage() {
               const rentalShares = getRentalShares(vehicle);
               return (
                 <article className="vehicle-block" key={vehicle.id}>
-                  <header><div><h3>{vehicle.name}</h3><span>{vehicle.seats} {t("seats").toLowerCase()}</span></div><button className="row-action" onClick={() => setVehicles((current) => current.filter((item) => item.id !== vehicle.id))}>{t("remove")}</button></header>
+                  <header><div><h3>{vehicle.name}</h3><span>{vehicle.seats} {t("seats").toLowerCase()}</span></div><div className="logistics-item-actions"><button className="row-action" onClick={() => openCarEditor(vehicle)}>{t("edit")}</button><button className="row-action" onClick={() => setVehicles((current) => current.filter((item) => item.id !== vehicle.id))}>{t("remove")}</button></div></header>
                   <div className="vehicle-grid">
                     <label><span>{t("driver")}</span><select value={vehicle.driverId} onChange={(event) => setDriver(vehicle.id, event.target.value)}><option value="">{t("choose_driver")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
                     <div className="passenger-control"><span>{t("passengers")}</span><div>{people.filter((person) => String(person.id) !== String(vehicle.driverId)).map((person) => <button className={vehicle.passengerIds.map(String).includes(String(person.id)) ? "selected" : ""} key={person.id} onClick={() => togglePassenger(vehicle.id, person.id)}>{person.name}</button>)}</div></div>
@@ -568,10 +703,11 @@ export default function PlanPage() {
                     </div>
                     {vehicle.rentalEnabled && (
                       <>
-                        <div className="rental-cost-row">
-                          <label className="field-group"><span className="field-label">{t("rental_price")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={vehicle.rentalPrice} onChange={(event) => setVehicles((current) => current.map((item) => item.id === vehicle.id ? { ...item, rentalPrice: event.target.value } : item))} placeholder="0.00" /><CurrencySelect value={vehicle.rentalCurrency} onChange={(rentalCurrency) => setVehicles((current) => current.map((item) => item.id === vehicle.id ? { ...item, rentalCurrency } : item))} /></div></label>
-                          <label className="field-group"><span className="field-label">{t("payer")}</span><select value={vehicle.rentalPaidById || ""} onChange={(event) => setVehicles((current) => current.map((item) => item.id === vehicle.id ? { ...item, rentalPaidById: event.target.value } : item))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
-                          <div><strong>{vehicle.rentalParticipantIds.length ? fmt((Number(vehicle.rentalPrice) || 0) / vehicle.rentalParticipantIds.length, vehicle.rentalCurrency) : fmt(0, vehicle.rentalCurrency)}</strong><span>{t("per_participant")}</span></div>
+                        <div className="rental-cost-row logistics-financial-summary">
+                          <div><span className="field-label">{t("rental_price")}</span><strong>{fmt(Number(vehicle.rentalPrice) || 0, vehicle.rentalCurrency)}</strong></div>
+                          <div><span className="field-label">{t("payer")}</span><strong>{personName(vehicle.rentalPaidById)}</strong></div>
+                          <div className="rental-per-person"><strong>{vehicle.rentalParticipantIds.length ? fmt((Number(vehicle.rentalPrice) || 0) / vehicle.rentalParticipantIds.length, vehicle.rentalCurrency) : fmt(0, vehicle.rentalCurrency)}</strong><span>{t("per_participant")}</span></div>
+                          <button className="button secondary small-button" onClick={() => openCarEditor(vehicle)}>{t("edit_car_details")}</button>
                         </div>
                         <div className="participation-block rental-participation">
                           <div><strong>{t("rental_participants")}</strong><span>{t("rental_participants_help")}</span></div>
@@ -687,6 +823,46 @@ export default function PlanPage() {
         </div>
 
       </div>
+
+      {stayEdit && (
+        <div className="confirm-overlay" onMouseDown={(event) => event.target === event.currentTarget && setStayEdit(null)}>
+          <form className="confirm-dialog logistics-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-stay-title" aria-describedby="edit-stay-description" onSubmit={saveStayEdit}>
+            <h2 id="edit-stay-title">{t("edit_stay")}</h2>
+            <p id="edit-stay-description">{t("edit_logistics_financial_desc")}</p>
+            <div className="logistics-edit-grid">
+              <label><span>{t("stay_name")}</span><input autoFocus required value={stayEdit.name} onChange={(event) => setStayEdit((current) => ({ ...current, name: event.target.value }))} /></label>
+              <label><span>{t("location")}</span><input value={stayEdit.location} onChange={(event) => setStayEdit((current) => ({ ...current, location: event.target.value }))} /></label>
+              <label><span>{t("nights")}</span><input type="number" min="1" required value={stayEdit.nights} onChange={(event) => setStayEdit((current) => ({ ...current, nights: event.target.value }))} /></label>
+              <label><span>{t("stay_price")}</span><input type="number" min="0" step="0.01" required value={stayEdit.price} onChange={(event) => setStayEdit((current) => ({ ...current, price: event.target.value }))} /></label>
+              <label><span>{t("currency")}</span><CurrencySelect value={stayEdit.currency} onChange={(currency) => setStayEdit((current) => ({ ...current, currency }))} /></label>
+              <label><span>{t("payer")}</span><select value={stayEdit.paidById} onChange={(event) => setStayEdit((current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+              <label><span>{t("split_method")}</span><select value={stayEdit.splitMode} onChange={(event) => setStayEdit((current) => ({ ...current, splitMode: event.target.value }))}><option value="people">{t("split_by_people")}</option><option value="rooms">{t("split_by_rooms")}</option></select></label>
+            </div>
+            <p className="edit-balance-warning">{t("edit_logistics_balance_warning")}</p>
+            <div className="confirm-actions"><button type="button" className="button secondary" onClick={() => setStayEdit(null)}>{t("cancel")}</button><button type="submit" className="button primary">{t("confirm_changes")}</button></div>
+          </form>
+        </div>
+      )}
+
+      {carEdit && editedVehicle && (
+        <div className="confirm-overlay" onMouseDown={(event) => event.target === event.currentTarget && setCarEdit(null)}>
+          <form className="confirm-dialog logistics-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-car-title" aria-describedby="edit-car-description" onSubmit={saveCarEdit}>
+            <h2 id="edit-car-title">{t("edit_car")}</h2>
+            <p id="edit-car-description">{t("edit_logistics_financial_desc")}</p>
+            <div className="logistics-edit-grid">
+              <label><span>{t("car_name")}</span><input autoFocus required value={carEdit.name} onChange={(event) => setCarEdit((current) => ({ ...current, name: event.target.value }))} /></label>
+              <label><span>{t("seats")}</span><input type="number" min={minimumEditedCarSeats} max="60" required value={carEdit.seats} onChange={(event) => setCarEdit((current) => ({ ...current, seats: event.target.value }))} /><small>{t("seat_limit_help", { minimum: minimumEditedCarSeats })}</small></label>
+              {editedVehicle.rentalEnabled && <>
+                <label><span>{t("rental_price")}</span><input type="number" min="0" step="0.01" required value={carEdit.rentalPrice} onChange={(event) => setCarEdit((current) => ({ ...current, rentalPrice: event.target.value }))} /></label>
+                <label><span>{t("currency")}</span><CurrencySelect value={carEdit.rentalCurrency} onChange={(rentalCurrency) => setCarEdit((current) => ({ ...current, rentalCurrency }))} /></label>
+                <label><span>{t("payer")}</span><select value={carEdit.rentalPaidById} onChange={(event) => setCarEdit((current) => ({ ...current, rentalPaidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+              </>}
+            </div>
+            <p className="edit-balance-warning">{t("edit_logistics_balance_warning")}</p>
+            <div className="confirm-actions"><button type="button" className="button secondary" onClick={() => setCarEdit(null)}>{t("cancel")}</button><button type="submit" className="button primary">{t("confirm_changes")}</button></div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

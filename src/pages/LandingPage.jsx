@@ -122,6 +122,7 @@ export default function LandingPage() {
             <h1>{t("hero_title")}</h1>
             <p>{t("hero_desc")}</p>
             <div className="hero-actions">
+              {user && <button className="button secondary large-button mobile-hero-trips-button" onClick={() => navigate("/online/lobby")}>{t("my_trips")}</button>}
               <button className="button primary large-button" onClick={() => navigate("/offline")}>{t("start_local_trip")}</button>
               <button className="button secondary large-button" onClick={() => navigate(user ? "/online/lobby" : "/online?mode=register")}>{t("open_guest_room")}</button>
             </div>

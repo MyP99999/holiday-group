@@ -9,11 +9,15 @@ import { createId } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
 import { buildLogisticsExpenses } from "../utils/logisticsCosts";
+import { isMemberClaimed } from "../utils/memberClaims";
+import { appendActivity, createActivityEntry } from "../utils/activityLog";
 import {
   canConfirmSettlementPayment,
+  editablePaymentLimitEUR,
   getSettlementPaymentReasons,
   normalizeSettlementPaymentReason,
   resolveSettlementPaymentAmountEUR,
+  toLocalDateTimeInput,
 } from "../utils/settlementPayments";
 
 export default function SettlePage() {
@@ -24,7 +28,8 @@ export default function SettlePage() {
     people, expenses, accommodations, vehicles, flights, otherCosts,
     paymentRoutes, setPaymentRoutes,
     settlementPayments, setSettlementPayments, logisticsPayments,
-    currentMemberId, canManageMembers,
+    currentMemberId, currentPerson, canManageMembers, canModerateMembers, moderateMember,
+    activityLog, updateTripState,
   } = useApp();
   const [currency, setCurrency] = useState("EUR");
   const [activeTab, setActiveTab] = useState("pending");
@@ -32,6 +37,14 @@ export default function SettlePage() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentReasonId, setPaymentReasonId] = useState("");
   const [paymentError, setPaymentError] = useState("");
+  const [editingPayment, setEditingPayment] = useState(null);
+  const [historyPaymentAmount, setHistoryPaymentAmount] = useState("");
+  const [historyPaymentDate, setHistoryPaymentDate] = useState("");
+  const [historyPaymentError, setHistoryPaymentError] = useState("");
+  const [paymentToDelete, setPaymentToDelete] = useState(null);
+  const [memberModeration, setMemberModeration] = useState(null);
+  const [memberModerationError, setMemberModerationError] = useState("");
+  const [memberModerationBusy, setMemberModerationBusy] = useState(false);
   const logisticsExpenses = useMemo(
     () => buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts }),
     [accommodations, vehicles, flights, otherCosts]
@@ -46,6 +59,13 @@ export default function SettlePage() {
     () => [...allPayments].sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt)),
     [allPayments]
   );
+  const orderedTransactions = useMemo(() => [...transactions].sort((left, right) => (
+    Number(String(right.from) === String(currentMemberId)) - Number(String(left.from) === String(currentMemberId))
+  )), [transactions, currentMemberId]);
+  const orderedActivity = useMemo(
+    () => [...(activityLog || [])].sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt)),
+    [activityLog]
+  );
   const personById = (id) => people.find((person) => String(person.id) === String(id));
   const personName = (id) => personById(id)?.name || "Unknown";
   const selectedPaymentReason = confirmingPayment?.reasonOptions.find((reason) => reason.expenseId === paymentReasonId) || null;
@@ -58,16 +78,29 @@ export default function SettlePage() {
     setPaymentReasonId("");
     setPaymentError("");
   };
+  const closePaymentEditor = () => {
+    setEditingPayment(null);
+    setHistoryPaymentAmount("");
+    setHistoryPaymentDate("");
+    setHistoryPaymentError("");
+  };
+  const closeMemberModeration = () => {
+    if (memberModerationBusy) return;
+    setMemberModeration(null);
+    setMemberModerationError("");
+  };
 
   useEffect(() => {
-    if (!confirmingPayment) return undefined;
+    if (!confirmingPayment && !editingPayment && !paymentToDelete && !memberModeration) return undefined;
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event) => {
       if (event.key !== "Escape") return;
-      setConfirmingPayment(null);
-      setPaymentAmount("");
-      setPaymentReasonId("");
-      setPaymentError("");
+      if (memberModerationBusy) return;
+      closePaymentConfirmation();
+      closePaymentEditor();
+      setPaymentToDelete(null);
+      setMemberModeration(null);
+      setMemberModerationError("");
     };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", closeOnEscape);
@@ -75,7 +108,7 @@ export default function SettlePage() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [confirmingPayment]);
+  }, [confirmingPayment, editingPayment, paymentToDelete, memberModeration, memberModerationBusy]);
 
   const openPaymentConfirmation = (transaction, viaId) => {
     if (!canConfirmSettlementPayment(transaction, currentMemberId, canManageMembers)) return;
@@ -152,6 +185,88 @@ export default function SettlePage() {
     setActiveTab("history");
   };
 
+  const openHistoryPaymentEditor = (payment) => {
+    if (!canManageMembers) return;
+    const maximumEUR = editablePaymentLimitEUR(people, allExpenses, allPayments, payment.id);
+    setEditingPayment({ payment, maximumEUR });
+    setHistoryPaymentAmount(String(Number(convert(payment.amountEUR, "EUR", currency).toFixed(2))));
+    setHistoryPaymentDate(toLocalDateTimeInput(payment.paidAt));
+    setHistoryPaymentError("");
+  };
+
+  const saveHistoryPayment = (event) => {
+    event.preventDefault();
+    if (!canManageMembers || !editingPayment) return;
+    const maximumEUR = editablePaymentLimitEUR(people, allExpenses, allPayments, editingPayment.payment.id);
+    const amountEUR = resolveSettlementPaymentAmountEUR(historyPaymentAmount, currency, maximumEUR);
+    const paidAt = new Date(historyPaymentDate);
+    if (amountEUR === null || Number.isNaN(paidAt.getTime())) {
+      setHistoryPaymentError(t("payment_edit_invalid", { amount: fmt(convert(maximumEUR, "EUR", currency), currency) }));
+      return;
+    }
+
+    const paymentField = editingPayment.payment.source === "logistics" ? "logisticsPayments" : "settlementPayments";
+    const fields = [];
+    if (Math.abs(Number(editingPayment.payment.amountEUR) - amountEUR) > 0.005) fields.push("amount");
+    if (toLocalDateTimeInput(editingPayment.payment.paidAt) !== historyPaymentDate) fields.push("date");
+    if (!fields.length) {
+      closePaymentEditor();
+      return;
+    }
+    updateTripState((current) => appendActivity({
+      ...current,
+      [paymentField]: current[paymentField].map((payment) => String(payment.id) === String(editingPayment.payment.id) ? {
+        ...payment,
+        amountEUR,
+        ...(payment.source === "logistics" ? { originalAmount: Number(historyPaymentAmount), originalCurrency: currency } : {}),
+        isPartial: amountEUR + 0.01 < maximumEUR,
+        paidAt: paidAt.toISOString(),
+        editedAt: new Date().toISOString(),
+        editedById: currentMemberId || "",
+      } : payment),
+    }, createActivityEntry({
+      type: "payment_edited",
+      actor: currentPerson,
+      subject: { id: editingPayment.payment.id, name: `${editingPayment.payment.fromName} → ${editingPayment.payment.toName}` },
+      fields,
+    })));
+    closePaymentEditor();
+  };
+
+  const deleteHistoryPayment = () => {
+    if (!canManageMembers || !paymentToDelete) return;
+    const paymentField = paymentToDelete.source === "logistics" ? "logisticsPayments" : "settlementPayments";
+    updateTripState((current) => appendActivity({
+      ...current,
+      [paymentField]: current[paymentField].filter((payment) => String(payment.id) !== String(paymentToDelete.id)),
+    }, createActivityEntry({
+      type: "payment_deleted",
+      actor: currentPerson,
+      subject: { id: paymentToDelete.id, name: `${paymentToDelete.fromName} → ${paymentToDelete.toName}` },
+    })));
+    setPaymentToDelete(null);
+  };
+
+  const openMemberModeration = (person, action) => {
+    if (!canModerateMembers || String(person.id) === String(currentMemberId)) return;
+    setMemberModeration({ person, action });
+    setMemberModerationError("");
+  };
+
+  const confirmMemberModeration = async () => {
+    if (!memberModeration || !canModerateMembers) return;
+    setMemberModerationBusy(true);
+    setMemberModerationError("");
+    try {
+      await moderateMember(memberModeration.person.id, memberModeration.action);
+      setMemberModeration(null);
+    } catch (error) {
+      setMemberModerationError(error.message || t("member_moderation_failed"));
+    } finally {
+      setMemberModerationBusy(false);
+    }
+  };
+
   return (
     <div className="page-stack">
       <PageHeader title={t("settle_up")} description={t("settle_desc")} actions={<CurrencySelect value={currency} onChange={setCurrency} />} />
@@ -164,7 +279,29 @@ export default function SettlePage() {
             <div className="balance-ledger">
               {people.map((person, index) => {
                 const balance = convert(balances[String(person.id)] || 0, "EUR", currency);
-                return <div className="balance-ledger-row" key={person.id}><PersonAvatar person={person} people={people} index={index} /><strong>{person.name}</strong><span className={balance > 0.01 ? "money-positive" : balance < -0.01 ? "money-negative" : "money-muted"}>{balance > 0.01 ? `${t("gets_back")} ${fmt(balance, currency)}` : balance < -0.01 ? `${t("owes")} ${fmt(Math.abs(balance), currency)}` : t("settled")}</span></div>;
+                const claimed = isMemberClaimed(person);
+                const canModeratePerson = canModerateMembers && String(person.id) !== String(currentMemberId);
+                return (
+                  <div className={`balance-ledger-row${person.isBanned ? " is-banned" : ""}`} key={person.id}>
+                    <div className="balance-member-identity">
+                      <PersonAvatar person={person} people={people} index={index} />
+                      <span><strong>{person.name}</strong>{person.isBanned ? <small>{t("banned_identity")}</small> : !claimed ? <small>{t("unclaimed_identity")}</small> : null}</span>
+                    </div>
+                    <span className={balance > 0.01 ? "money-positive" : balance < -0.01 ? "money-negative" : "money-muted"}>{balance > 0.01 ? `${t("gets_back")} ${fmt(balance, currency)}` : balance < -0.01 ? `${t("owes")} ${fmt(Math.abs(balance), currency)}` : t("settled")}</span>
+                    {canModeratePerson && (
+                      <div className="balance-admin-actions">
+                        {person.isBanned ? (
+                          <button className="row-action" onClick={() => openMemberModeration(person, "unban")}>{t("unban")}</button>
+                        ) : claimed ? (
+                          <>
+                            <button className="row-action" onClick={() => openMemberModeration(person, "kick")}>{t("kick")}</button>
+                            <button className="row-action danger-link" onClick={() => openMemberModeration(person, "ban")}>{t("ban")}</button>
+                          </>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                );
               })}
             </div>
           </section>
@@ -174,19 +311,21 @@ export default function SettlePage() {
             <div className="settle-tabs" role="tablist" aria-label={t("payments_to_make")}>
               <button role="tab" aria-selected={activeTab === "pending"} className={activeTab === "pending" ? "active" : ""} onClick={() => setActiveTab("pending")}>{t("pending")} <span>{transactions.length}</span></button>
               <button role="tab" aria-selected={activeTab === "history"} className={activeTab === "history" ? "active" : ""} onClick={() => setActiveTab("history")}>{t("history")} <span>{paymentHistory.length}</span></button>
+              <button role="tab" aria-selected={activeTab === "actions"} className={activeTab === "actions" ? "active" : ""} onClick={() => setActiveTab("actions")}>{t("actions")} <span>{orderedActivity.length}</span></button>
             </div>
 
             {activeTab === "pending" ? (transactions.length ? (
-              <div className="payment-list">{transactions.map((transaction, index) => {
+              <div className="payment-list">{orderedTransactions.map((transaction, index) => {
                 const routeKey = `${transaction.from}:${transaction.to}`;
                 const viaId = paymentRoutes[routeKey] || "";
                 const alternatives = people.filter((person) => ![String(transaction.from), String(transaction.to)].includes(String(person.id)));
                 const amount = fmt(convert(transaction.amountEUR, "EUR", currency), currency);
                 const canConfirm = canConfirmSettlementPayment(transaction, currentMemberId, canManageMembers);
+                const isYourPayment = String(transaction.from) === String(currentMemberId);
                 return (
-                  <article className={`payment-route${viaId ? " rerouted" : ""}`} key={`${routeKey}-${index}`}>
+                  <article className={`payment-route${viaId ? " rerouted" : ""}${isYourPayment ? " your-payment" : ""}`} key={`${routeKey}-${index}`}>
                     <div className="payment-route-main">
-                      <span><strong>{personName(transaction.from)}</strong> {t("pays")} <strong>{personName(transaction.to)}</strong></span>
+                      <span>{isYourPayment && <small className="your-payment-label">{t("your_payment")}</small>}<strong>{personName(transaction.from)}</strong> {t("pays")} <strong>{personName(transaction.to)}</strong></span>
                       <b>{amount}</b>
                     </div>
                     <label className="route-control">
@@ -206,30 +345,92 @@ export default function SettlePage() {
                     <div className="payment-route-footer">
                       <button className="text-link" onClick={() => navigate(`../people/${viaId || transaction.to}`)}>{t("view_payment_details", { name: personName(viaId || transaction.to) })}</button>
                       {canConfirm
-                        ? <button className="button secondary small-button" onClick={() => openPaymentConfirmation(transaction, viaId)}>{t("mark_as_paid")}</button>
+                        ? <button className="button primary small-button mark-paid-button" onClick={() => openPaymentConfirmation(transaction, viaId)}>{t("mark_as_paid")}</button>
                         : <small className="payment-permission-note">{t("payer_or_admin_only")}</small>}
                     </div>
                   </article>
                 );
               })}</div>
-            ) : <div className="settled-message"><strong>{t("everything_even")}</strong><span>{allExpenses.length ? t("no_payments") : t("add_first_expense")}</span></div>) : paymentHistory.length ? (
+            ) : <div className="settled-message"><strong>{t("everything_even")}</strong><span>{allExpenses.length ? t("no_payments") : t("add_first_expense")}</span></div>) : activeTab === "history" ? (paymentHistory.length ? (
               <div className="payment-history-list">{paymentHistory.map((payment) => {
                 const from = personById(payment.fromId) || { id: payment.fromId, name: payment.fromName, color: payment.fromColor };
                 const amount = fmt(convert(payment.amountEUR, "EUR", currency), currency);
                 return (
                   <article className="payment-history-row" key={payment.id}>
                     <PersonAvatar person={from} people={people} size="small" />
-                    <div><strong>{payment.fromName} {t("paid")} {payment.toName}</strong><span>{t("paid_on", { date: new Date(payment.paidAt).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }) })}{payment.viaName ? ` · ${t("paid_via", { name: payment.viaName })}` : ""}</span></div>
+                    <div><strong>{payment.fromName} {t("paid")} {payment.toName}</strong><span>{t("paid_on", { date: new Date(payment.paidAt).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }) })}{payment.viaName ? ` · ${t("paid_via", { name: payment.viaName })}` : ""}{payment.editedAt ? ` · ${t("edited")}` : ""}</span></div>
                     {payment.reason
                       ? <span className="payment-history-reason">{t("payment_reason_history", { reason: payment.reason })}</span>
                       : payment.source === "logistics" && payment.logisticsTitle
                         ? <span className="payment-history-reason">{t("advance_for", { title: payment.logisticsTitle })}</span>
                         : null}
-                    <b>{amount}</b>
+                    <div className="payment-history-side">
+                      <b>{amount}</b>
+                      {canManageMembers && <span><button className="row-action" onClick={() => openHistoryPaymentEditor(payment)}>{t("edit")}</button><button className="row-action danger-link" onClick={() => setPaymentToDelete(payment)}>{t("delete")}</button></span>}
+                    </div>
                   </article>
                 );
               })}</div>
-            ) : <div className="settled-message history-empty"><strong>{t("no_payment_history")}</strong><span>{t("no_payment_history_desc")}</span></div>}
+            ) : <div className="settled-message history-empty"><strong>{t("no_payment_history")}</strong><span>{t("no_payment_history_desc")}</span></div>) : orderedActivity.length ? (
+              <div className="activity-history-list">{orderedActivity.map((entry) => {
+                const actor = personById(entry.actorId) || { id: entry.actorId, name: entry.actorName, color: "#6f8f7b" };
+                return (
+                  <article className="activity-history-row" key={entry.id}>
+                    <PersonAvatar person={actor} people={people} size="small" inControl />
+                    <div>
+                      <strong>{t(`activity_${entry.type}`, { actor: entry.actorName || t("admin"), subject: entry.subjectName || t("item") })}</strong>
+                      <span>{new Date(entry.createdAt).toLocaleString(locale, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                      {entry.fields?.length ? <small>{t("activity_fields_changed", { fields: entry.fields.map((field) => t(`activity_field_${field}`)).join(", ") })}</small> : null}
+                    </div>
+                  </article>
+                );
+              })}</div>
+            ) : <div className="settled-message history-empty"><strong>{t("no_actions_history")}</strong><span>{t("no_actions_history_desc")}</span></div>}
+          </section>
+        </div>
+      )}
+
+      {editingPayment && (
+        <div className="confirm-overlay" onMouseDown={(event) => event.target === event.currentTarget && closePaymentEditor()}>
+          <form className="confirm-dialog payment-history-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-payment-title" aria-describedby="edit-payment-description" onSubmit={saveHistoryPayment}>
+            <h2 id="edit-payment-title">{t("edit_payment")}</h2>
+            <p id="edit-payment-description">{t("edit_payment_desc")}</p>
+            <div className="confirm-payment-summary">
+              <span><strong>{editingPayment.payment.fromName}</strong> {t("paid")} <strong>{editingPayment.payment.toName}</strong></span>
+              <b>{fmt(convert(editingPayment.payment.amountEUR, "EUR", currency), currency)}</b>
+              <small>{t("maximum_supported_payment", { amount: fmt(convert(editingPayment.maximumEUR, "EUR", currency), currency) })}</small>
+            </div>
+            <label className="confirm-payment-amount">
+              <span>{t("payment_amount")}</span>
+              <div><input autoFocus type="number" min="0.01" max={Number(convert(editingPayment.maximumEUR, "EUR", currency).toFixed(2))} step="0.01" inputMode="decimal" value={historyPaymentAmount} onChange={(event) => { setHistoryPaymentAmount(event.target.value); setHistoryPaymentError(""); }} /><strong>{currency}</strong></div>
+            </label>
+            <label className="confirm-payment-date"><span>{t("payment_date")}</span><input type="datetime-local" value={historyPaymentDate} onChange={(event) => { setHistoryPaymentDate(event.target.value); setHistoryPaymentError(""); }} /></label>
+            {historyPaymentError && <p className="form-error" role="alert">{historyPaymentError}</p>}
+            <div className="confirm-actions"><button type="button" className="button secondary" onClick={closePaymentEditor}>{t("cancel")}</button><button type="submit" className="button primary">{t("save_changes")}</button></div>
+          </form>
+        </div>
+      )}
+
+      {paymentToDelete && (
+        <div className="confirm-overlay" onMouseDown={(event) => event.target === event.currentTarget && setPaymentToDelete(null)}>
+          <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-payment-title" aria-describedby="delete-payment-description">
+            <h2 id="delete-payment-title">{t("delete_payment_title")}</h2>
+            <p id="delete-payment-description">{t("delete_payment_desc")}</p>
+            <div className="confirm-payment-summary"><span><strong>{paymentToDelete.fromName}</strong> {t("paid")} <strong>{paymentToDelete.toName}</strong></span><b>{fmt(convert(paymentToDelete.amountEUR, "EUR", currency), currency)}</b></div>
+            <div className="confirm-actions"><button type="button" className="button secondary" autoFocus onClick={() => setPaymentToDelete(null)}>{t("cancel")}</button><button type="button" className="button danger" onClick={deleteHistoryPayment}>{t("delete_payment")}</button></div>
+          </section>
+        </div>
+      )}
+
+      {memberModeration && (
+        <div className="confirm-overlay" onMouseDown={(event) => event.target === event.currentTarget && closeMemberModeration()}>
+          <section className="confirm-dialog member-moderation-dialog" role="dialog" aria-modal="true" aria-labelledby="member-moderation-title" aria-describedby="member-moderation-description">
+            <h2 id="member-moderation-title">{t(`${memberModeration.action}_member_title`, { name: memberModeration.person.name })}</h2>
+            <p id="member-moderation-description">{t(`${memberModeration.action}_member_desc`, { name: memberModeration.person.name })}</p>
+            <div className="moderation-member-summary"><PersonAvatar person={memberModeration.person} people={people} inControl /><span><strong>{memberModeration.person.name}</strong><small>{memberModeration.person.role === "admin" ? t("admin") : t("member")}</small></span></div>
+            {memberModeration.action !== "unban" && <p className="moderation-preserves-data">{t("moderation_preserves_data")}</p>}
+            {memberModerationError && <p className="form-error" role="alert">{memberModerationError}</p>}
+            <div className="confirm-actions"><button type="button" className="button secondary" disabled={memberModerationBusy} onClick={closeMemberModeration}>{t("cancel")}</button><button type="button" className={`button ${memberModeration.action === "ban" ? "danger" : "primary"}`} disabled={memberModerationBusy} onClick={confirmMemberModeration}>{memberModerationBusy ? t("working") : t(memberModeration.action)}</button></div>
           </section>
         </div>
       )}

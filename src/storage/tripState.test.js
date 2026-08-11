@@ -1,4 +1,4 @@
-import { normalizePaymentDetails, normalizeTripState } from "./tripState";
+import { normalizePaymentDetails, normalizeTripState, normalizeVehicleSeats } from "./tripState";
 
 describe("member payment details", () => {
   it("adds safe defaults to older trip members", () => {
@@ -38,5 +38,28 @@ describe("member payment details", () => {
     expect(state.flights[0].paidById).toBe("");
     expect(state.otherCosts).toEqual([]);
     expect(state.logisticsPayments).toEqual([]);
+  });
+});
+
+describe("vehicle seat limits", () => {
+  it("keeps seat counts between one and sixty", () => {
+    expect(normalizeVehicleSeats(0)).toBe(1);
+    expect(normalizeVehicleSeats(42)).toBe(42);
+    expect(normalizeVehicleSeats(80)).toBe(60);
+  });
+
+  it("does not allow an edit below the occupied seat count", () => {
+    expect(normalizeVehicleSeats(2, 5)).toBe(5);
+  });
+});
+
+describe("trip date defaults", () => {
+  it("keeps valid saved dates and clears malformed legacy values", () => {
+    expect(normalizeTripState({ tripStartDate: "2026-08-11", tripEndDate: "2026-08-15" })).toMatchObject({
+      tripStartDate: "2026-08-11",
+      tripEndDate: "2026-08-15",
+    });
+    expect(normalizeTripState({ tripStartDate: "tomorrow" }).tripStartDate).toBe("");
+    expect(normalizeTripState({ tripStartDate: "2026-08-15", tripEndDate: "2026-08-11" }).tripEndDate).toBe("");
   });
 });

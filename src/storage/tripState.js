@@ -1,10 +1,16 @@
 import { PERSON_COLORS } from "../constants";
+import { normalizeTripDate } from "../utils/tripDates";
 
 export function createId(prefix = "item") {
   const random = typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   return `${prefix}-${random}`;
+}
+
+export function normalizeVehicleSeats(value, minimum = 1) {
+  const safeMinimum = Math.min(60, Math.max(1, Number(minimum) || 1));
+  return Math.min(60, Math.max(safeMinimum, Math.trunc(Number(value) || safeMinimum)));
 }
 
 function stringHash(value = "") {
@@ -51,6 +57,8 @@ export function createDefaultTripState(tripName = "Untitled trip", creatorName =
 
   return {
     tripName,
+    tripStartDate: "",
+    tripEndDate: "",
     people: creator ? [creator] : [],
     expenses: [],
     accommodations: [],
@@ -60,6 +68,7 @@ export function createDefaultTripState(tripName = "Untitled trip", creatorName =
     polls: [],
     comments: [],
     chatMessages: [],
+    activityLog: [],
     paymentRoutes: {},
     settlementPayments: [],
     logisticsPayments: [],
@@ -88,9 +97,15 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
     people = people.map((person, index) => index === 0 ? { ...person, role: "admin" } : person);
   }
 
+  const tripStartDate = normalizeTripDate(source.tripStartDate);
+  const normalizedTripEndDate = normalizeTripDate(source.tripEndDate);
+  const tripEndDate = tripStartDate && normalizedTripEndDate < tripStartDate ? "" : normalizedTripEndDate;
+
   return {
     ...source,
     tripName: source.tripName || fallbackName,
+    tripStartDate,
+    tripEndDate,
     people,
     expenses: Array.isArray(source.expenses) ? source.expenses : [],
     accommodations: Array.isArray(source.accommodations) ? source.accommodations.map((stay) => {
@@ -110,6 +125,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
     }) : [],
     vehicles: Array.isArray(source.vehicles) ? source.vehicles.map((vehicle) => ({
       ...vehicle,
+      seats: normalizeVehicleSeats(vehicle.seats || 1),
       passengerIds: vehicle.passengerIds || [],
       rentalEnabled: Boolean(vehicle.rentalEnabled),
       rentalPrice: vehicle.rentalPrice ?? "",
@@ -160,6 +176,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
     })) : [],
     comments: Array.isArray(source.comments) ? source.comments : [],
     chatMessages: Array.isArray(source.chatMessages) ? source.chatMessages : [],
+    activityLog: Array.isArray(source.activityLog) ? source.activityLog : [],
     paymentRoutes: source.paymentRoutes && typeof source.paymentRoutes === "object" ? source.paymentRoutes : {},
     settlementPayments: Array.isArray(source.settlementPayments) ? source.settlementPayments : [],
     logisticsPayments: Array.isArray(source.logisticsPayments) ? source.logisticsPayments : [],

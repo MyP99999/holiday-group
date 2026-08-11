@@ -6,6 +6,7 @@ import {
   LuReceiptText,
   LuCalendarDays,
   LuMessageCircle,
+  LuHouse,
   LuVote,
 } from "react-icons/lu";
 import { AppProvider } from "../context/AppContext";
@@ -118,6 +119,7 @@ function AppLayoutContent({ roomCode, sessionName, notificationKey, backTo }) {
           <BrandButton className="mobile-brand" onClick={() => navigate("people")} />
           <button className="mobile-trip" onClick={() => navigate("people")}>{displayedTripName}</button>
           <div className="mobile-header-actions">
+            <button className="mobile-home-button" onClick={() => navigate("/")} aria-label={t("go_to_landing_page")} title={t("go_to_landing_page")}><LuHouse aria-hidden="true" /></button>
             {roomCode && <button className="mobile-invite-button" onClick={copyCode}>{copied ? t("copied") : t("invite_friend")}</button>}
             <LanguageSelect compact />
           </div>

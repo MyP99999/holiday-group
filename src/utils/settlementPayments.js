@@ -1,4 +1,4 @@
-import { calculateSettlements, convert, getExpenseShares } from "../utils";
+import { calculateBalances, calculateSettlements, convert, getExpenseShares } from "../utils";
 
 export function canConfirmSettlementPayment(transaction, currentMemberId, canManageMembers) {
   return Boolean(
@@ -17,6 +17,23 @@ export function resolveSettlementPaymentAmountEUR(amount, currency, maximumAmoun
   const converted = convert(numeric, currency, "EUR");
   if (!converted || converted - maximum > 0.01) return null;
   return maximum - converted < 0.01 ? maximum : converted;
+}
+
+export function editablePaymentLimitEUR(people, expenses, payments, paymentId) {
+  const payment = (payments || []).find((item) => String(item.id) === String(paymentId));
+  if (!payment) return 0;
+  const otherPayments = (payments || []).filter((item) => String(item.id) !== String(paymentId));
+  const balances = calculateBalances(people || [], expenses || [], otherPayments);
+  const debtorAmount = Math.max(0, -(balances[String(payment.fromId)] || 0));
+  const creditorAmount = Math.max(0, balances[String(payment.toId)] || 0);
+  return Math.min(debtorAmount, creditorAmount);
+}
+
+export function toLocalDateTimeInput(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
 }
 
 export function normalizeSettlementPaymentReason(reason) {

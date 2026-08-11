@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LuCalendarRange } from "react-icons/lu";
 import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
 import PersonAvatar from "../components/PersonAvatar";
@@ -10,13 +11,14 @@ import { createId, nextPersonColor } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
 import { buildLogisticsExpenses } from "../utils/logisticsCosts";
+import { formatTripDate, formatTripDateRange } from "../utils/tripDates";
 
 export default function PeoplePage() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { rates, rateDate, status: rateStatus, isRefreshing, refreshRates } = useCurrencyRates();
   const {
-    people, setPeople, expenses, accommodations, vehicles, flights, otherCosts,
+    people, setPeople, tripStartDate, tripEndDate, expenses, accommodations, vehicles, flights, otherCosts,
     settlementPayments, logisticsPayments, currentMemberId, canManageMembers,
   } = useApp();
   const [name, setName] = useState("");
@@ -29,6 +31,14 @@ export default function PeoplePage() {
     () => allExpenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
     [allExpenses, displayCurrency, rateDate]
   );
+  const hasTripDates = Boolean(tripStartDate || tripEndDate);
+  const tripDateLabel = tripStartDate && tripEndDate
+    ? formatTripDateRange(tripStartDate, tripEndDate, locale)
+    : tripStartDate
+      ? t("trip_starts_on", { date: formatTripDate(tripStartDate, locale) })
+      : tripEndDate
+        ? t("trip_ends_on", { date: formatTripDate(tripEndDate, locale) })
+        : t("trip_dates_not_set");
   const personHasRecords = (id) => allExpenses.some((expense) =>
     String(expense.paidById) === String(id) ||
     (expense.participantIds || []).some((personId) => String(personId) === String(id)) ||
@@ -83,6 +93,12 @@ export default function PeoplePage() {
         description={t("overview_desc")}
         actions={<><button className="button secondary" onClick={() => navigate("../settle")}>{t("settle_up")}</button><button className="button primary" onClick={() => navigate("../expenses")}>{t("add_expense")}</button></>}
       />
+
+      <section className={`trip-date-overview${hasTripDates ? " has-dates" : ""}`} aria-label={t("trip_dates")}>
+        <LuCalendarRange aria-hidden="true" />
+        <div><span>{t("trip_dates")}</span><strong>{tripDateLabel}</strong></div>
+        <button className="text-link" onClick={() => navigate("../plan")}>{t(hasTripDates ? "edit_trip_dates" : "set_trip_dates")}</button>
+      </section>
 
       <section className="summary-band" aria-label="Trip summary">
         <div><strong>{fmt(totalSpent, displayCurrency)}</strong><span>{t("total_spent")}</span></div>

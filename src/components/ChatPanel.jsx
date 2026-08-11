@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
 import { createId } from "../storage/tripState";
 import PersonAvatar from "./PersonAvatar";
+
+export function chatDayKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+}
 
 export default function ChatPanel() {
   const { t, locale } = useLanguage();
@@ -30,14 +36,22 @@ export default function ChatPanel() {
       </div>
 
       <div className="chat-stream" aria-live="polite">
-        {chatMessages.length ? chatMessages.map((item) => {
+        {chatMessages.length ? chatMessages.map((item, messageIndex) => {
           const authorIndex = people.findIndex((person) => String(person.id) === String(item.authorId));
           const author = people[authorIndex];
+          const sentAt = new Date(item.createdAt);
+          const dayKey = chatDayKey(item.createdAt);
+          const previousDayKey = messageIndex ? chatDayKey(chatMessages[messageIndex - 1]?.createdAt) : "";
           return (
-            <article className="chat-message" key={item.id}>
-              <PersonAvatar person={author} people={people} index={authorIndex} />
-              <div><p><strong>{author?.name || "Member"}</strong><time>{new Date(item.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}</time></p><span>{item.text}</span></div>
-            </article>
+            <Fragment key={item.id}>
+              {dayKey && dayKey !== previousDayKey && (
+                <div className="chat-day-separator"><time dateTime={dayKey}>{sentAt.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</time></div>
+              )}
+              <article className="chat-message">
+                <PersonAvatar person={author} people={people} index={authorIndex} />
+                <div><p><strong>{author?.name || t("member")}</strong><time dateTime={item.createdAt} title={sentAt.toLocaleString(locale)}>{sentAt.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}</time></p><span>{item.text}</span></div>
+              </article>
+            </Fragment>
           );
         }) : <div className="chat-empty"><strong>{t("no_messages")}</strong><span>{t("no_messages_desc")}</span></div>}
       </div>

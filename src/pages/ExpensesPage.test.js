@@ -11,7 +11,9 @@ jest.mock("react-router-dom", () => ({
 }), { virtual: true });
 
 jest.mock("../context/CurrencyRatesContext", () => ({
-  useCurrencyRates: () => ({ rateDate: "2026-08-11", status: "live" }),
+  useCurrencyRates: () => ({
+    rateDate: "2026-08-11", status: "live", selectedCurrency: "EUR", setSelectedCurrency: jest.fn(),
+  }),
 }));
 
 global.IS_REACT_ACT_ENVIRONMENT = true;

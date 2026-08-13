@@ -60,7 +60,10 @@ function CommentThread({ targetType, targetId }) {
 export default function PlanPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { rateDate } = useCurrencyRates();
+  const {
+    rateDate,
+    selectedCurrency: outputCurrency, setSelectedCurrency: setOutputCurrency,
+  } = useCurrencyRates();
   const {
     people, tripStartDate, tripEndDate, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights,
     otherCosts, setOtherCosts, logisticsPayments, setLogisticsPayments, settlementPayments,
@@ -70,17 +73,16 @@ export default function PlanPage() {
   const [showCarForm, setShowCarForm] = useState(false);
   const [showFlightForm, setShowFlightForm] = useState(false);
   const [showOtherForm, setShowOtherForm] = useState(false);
-  const [stayForm, setStayForm] = useState(emptyStay);
+  const [stayForm, setStayForm] = useState(() => ({ ...emptyStay, currency: outputCurrency }));
   const [carForm, setCarForm] = useState(emptyCar);
-  const [flightForm, setFlightForm] = useState(emptyFlight);
-  const [otherForm, setOtherForm] = useState(emptyOtherCost);
+  const [flightForm, setFlightForm] = useState(() => ({ ...emptyFlight, currency: outputCurrency }));
+  const [otherForm, setOtherForm] = useState(() => ({ ...emptyOtherCost, currency: outputCurrency }));
   const [paymentDraft, setPaymentDraft] = useState(null);
   const [paymentError, setPaymentError] = useState("");
   const [tripDateForm, setTripDateForm] = useState({ startDate: tripStartDate || "", endDate: tripEndDate || "" });
   const [tripDateMessage, setTripDateMessage] = useState("");
   const [stayEdit, setStayEdit] = useState(null);
   const [carEdit, setCarEdit] = useState(null);
-  const [outputCurrency, setOutputCurrency] = useState("EUR");
   const defaultPayerId = String(currentMemberId || people[0]?.id || "");
 
   const personName = (id) => people.find((person) => String(person.id) === String(id))?.name || t("unassigned");
@@ -158,17 +160,29 @@ export default function PlanPage() {
   };
 
   const openStayForm = () => {
-    setStayForm((current) => ({ ...current, paidById: current.paidById || defaultPayerId }));
+    setStayForm((current) => ({
+      ...current,
+      currency: current.name || current.price ? current.currency : outputCurrency,
+      paidById: current.paidById || defaultPayerId,
+    }));
     setShowStayForm(true);
   };
 
   const openFlightForm = () => {
-    setFlightForm((current) => ({ ...current, paidById: current.paidById || defaultPayerId }));
+    setFlightForm((current) => ({
+      ...current,
+      currency: current.from || current.to || current.price ? current.currency : outputCurrency,
+      paidById: current.paidById || defaultPayerId,
+    }));
     setShowFlightForm(true);
   };
 
   const openOtherForm = () => {
-    setOtherForm((current) => ({ ...current, paidById: current.paidById || defaultPayerId }));
+    setOtherForm((current) => ({
+      ...current,
+      currency: current.title || current.amount ? current.currency : outputCurrency,
+      paidById: current.paidById || defaultPayerId,
+    }));
     setShowOtherForm(true);
   };
 
@@ -222,7 +236,7 @@ export default function PlanPage() {
       rooms: [],
       createdAt: new Date().toISOString(),
     }]);
-    setStayForm({ ...emptyStay, paidById: defaultPayerId });
+    setStayForm({ ...emptyStay, currency: outputCurrency, paidById: defaultPayerId });
     setShowStayForm(false);
   };
 
@@ -328,7 +342,7 @@ export default function PlanPage() {
       passengerIds: [],
       rentalEnabled: false,
       rentalPrice: "",
-      rentalCurrency: "EUR",
+      rentalCurrency: outputCurrency,
       rentalPaidById: defaultPayerId,
       rentalParticipantIds: [],
       createdAt: new Date().toISOString(),
@@ -431,7 +445,7 @@ export default function PlanPage() {
       participantIds: [],
       createdAt: new Date().toISOString(),
     }]);
-    setFlightForm({ ...emptyFlight, paidById: defaultPayerId });
+    setFlightForm({ ...emptyFlight, currency: outputCurrency, paidById: defaultPayerId });
     setShowFlightForm(false);
   };
 
@@ -461,7 +475,7 @@ export default function PlanPage() {
       participantIds: people.map((person) => person.id),
       createdAt: new Date().toISOString(),
     }]);
-    setOtherForm({ ...emptyOtherCost, paidById: defaultPayerId });
+    setOtherForm({ ...emptyOtherCost, currency: outputCurrency, paidById: defaultPayerId });
     setShowOtherForm(false);
   };
 

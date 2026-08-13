@@ -6,7 +6,7 @@ export default function PrivacyPage() {
       eyebrow="Your data, clearly explained"
       title="Privacy Policy"
       summary="This policy explains what HolidaySplits collects, why it is used, who can see it, and how you can control or delete it."
-      updated="11 August 2026"
+      updated="13 August 2026"
     >
       <section>
         <h2>1. Who we are</h2>
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         <p>When you create an online account, we process your email address, display name, authentication identifiers and, if you add one, a profile image. Password authentication is handled securely by Supabase; HolidaySplits does not receive or store your password in readable form. If you choose Google sign-in, Google supplies the identifiers needed to sign you in.</p>
 
         <h3>Trip and group content</h3>
-        <p>We store information you and your group enter into shared trips, including member names, trip dates and locations, expenses, currencies, payers, splits, settlements, accommodation, cars, flights, plans, polls, comments, chat messages, roles, moderation decisions and action history. This may reveal travel and financial-planning information, so only add content you are comfortable sharing with that trip’s members.</p>
+        <p>We store information you and your group enter into shared trips, including member names, trip dates and locations, expenses, currencies, payers, splits, settlements, accommodation, cars, flights, plans, polls, wishlist ideas and likes, comments, chat messages, roles, moderation decisions and action history. This may reveal travel and financial-planning information, so only add content you are comfortable sharing with that trip’s members.</p>
 
         <h3>Local trips</h3>
         <p>Trips created in local mode are stored on your device in browser or app storage and are not synced to a HolidaySplits account. Clearing app or browser data can remove them permanently.</p>

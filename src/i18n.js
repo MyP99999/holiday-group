@@ -1130,6 +1130,114 @@ Object.assign(de, {
   trip_starts_on: "Beginn: {date}", trip_ends_on: "Ende: {date}",
 });
 
+Object.assign(en, {
+  refresh_data: "Refresh data", refreshing_data: "Refreshing data…", data_updated: "Data updated", refresh_failed: "Refresh failed",
+});
+Object.assign(ro, {
+  refresh_data: "Actualizează datele", refreshing_data: "Se actualizează datele…", data_updated: "Date actualizate", refresh_failed: "Actualizarea a eșuat",
+});
+Object.assign(es, {
+  refresh_data: "Actualizar datos", refreshing_data: "Actualizando datos…", data_updated: "Datos actualizados", refresh_failed: "Error al actualizar",
+});
+Object.assign(fr, {
+  refresh_data: "Actualiser les données", refreshing_data: "Actualisation des données…", data_updated: "Données actualisées", refresh_failed: "Échec de l’actualisation",
+});
+Object.assign(de, {
+  refresh_data: "Daten aktualisieren", refreshing_data: "Daten werden aktualisiert…", data_updated: "Daten aktualisiert", refresh_failed: "Aktualisierung fehlgeschlagen",
+});
+
+Object.assign(en, {
+  scroll_for_older_messages: "Scroll up for older messages", start_of_conversation: "Start of conversation",
+});
+Object.assign(ro, {
+  scroll_for_older_messages: "Derulează în sus pentru mesaje mai vechi", start_of_conversation: "Începutul conversației",
+});
+Object.assign(es, {
+  scroll_for_older_messages: "Desplázate hacia arriba para ver mensajes anteriores", start_of_conversation: "Inicio de la conversación",
+});
+Object.assign(fr, {
+  scroll_for_older_messages: "Faites défiler vers le haut pour voir les anciens messages", start_of_conversation: "Début de la conversation",
+});
+Object.assign(de, {
+  scroll_for_older_messages: "Nach oben scrollen, um ältere Nachrichten zu sehen", start_of_conversation: "Beginn der Unterhaltung",
+});
+
+Object.assign(en, {
+  wishlist: "Wishlist", wishlist_desc: "Collect the places, stays, food and experiences your group would love to try.",
+  wishlist_summary: "Wishlist summary", ideas: "Ideas", likes: "Likes", most_loved: "Most loved", add_idea: "Add idea",
+  new_idea: "New wishlist idea", new_idea_desc: "Save an idea now and let the group show what they like.",
+  idea_title: "Idea", idea_title_placeholder: "Sunset boat tour", idea_category: "Category", idea_details: "Notes",
+  idea_details_placeholder: "Why it looks good, possible dates, or anything the group should know…", idea_link: "Link (optional)",
+  idea_link_placeholder: "example.com/idea", save_idea: "Save idea", filter_ideas: "Filter ideas", liking_as: "Liking as",
+  sort_by: "Sort by", newest: "Newest", no_wishlist_ideas: "No ideas yet", no_wishlist_ideas_desc: "Add the first possibility and let everyone heart their favourites.",
+  no_filtered_ideas: "No ideas match this category yet.", add_first_idea: "Add the first idea", like_idea: "Like idea", unlike_idea: "Unlike idea",
+  no_likes_yet: "No likes yet", added_by: "Added by {name}", shared_idea: "Shared idea", open_idea_link: "Open link", remove_idea: "Remove idea",
+  remove_idea_confirm: "Remove this idea from the group wishlist?", wish_category_all: "All", wish_category_place: "Places",
+  wish_category_stay: "Stays", wish_category_food: "Food", wish_category_activity: "Activities", wish_category_other: "Other",
+  more: "More", more_desc: "Overview, group decisions and saved ideas.", more_overview_desc: "People, balances and trip dates.",
+  more_decisions_desc: "Vote together before booking.", more_wishlist_desc: "Save ideas and heart your favourites.",
+});
+Object.assign(ro, {
+  wishlist: "Listă de dorințe", wishlist_desc: "Adună locurile, cazările, restaurantele și experiențele pe care grupul ar vrea să le încerce.",
+  wishlist_summary: "Rezumatul listei", ideas: "Idei", likes: "Aprecieri", most_loved: "Cele mai apreciate", add_idea: "Adaugă idee",
+  new_idea: "Idee nouă", new_idea_desc: "Salvează o idee și lasă grupul să arate ce îi place.", idea_title: "Idee",
+  idea_title_placeholder: "Tur cu barca la apus", idea_category: "Categorie", idea_details: "Notițe",
+  idea_details_placeholder: "De ce pare interesantă, date posibile sau alte detalii…", idea_link: "Link (opțional)", idea_link_placeholder: "exemplu.ro/idee",
+  save_idea: "Salvează ideea", filter_ideas: "Filtrează ideile", liking_as: "Apreciezi ca", sort_by: "Sortează după", newest: "Cele mai noi",
+  no_wishlist_ideas: "Încă nu sunt idei", no_wishlist_ideas_desc: "Adaugă prima posibilitate și lasă-i pe toți să-și aleagă favoritele.",
+  no_filtered_ideas: "Nu există încă idei în această categorie.", add_first_idea: "Adaugă prima idee", like_idea: "Apreciază ideea", unlike_idea: "Retrage aprecierea",
+  no_likes_yet: "Nicio apreciere", added_by: "Adăugată de {name}", shared_idea: "Idee comună", open_idea_link: "Deschide linkul", remove_idea: "Șterge ideea",
+  remove_idea_confirm: "Ștergi această idee din lista grupului?", wish_category_all: "Toate", wish_category_place: "Locuri", wish_category_stay: "Cazări",
+  wish_category_food: "Mâncare", wish_category_activity: "Activități", wish_category_other: "Altele", more: "Mai multe",
+  more_desc: "Prezentare generală, decizii și idei salvate.", more_overview_desc: "Persoane, solduri și datele excursiei.",
+  more_decisions_desc: "Votați împreună înainte de rezervare.", more_wishlist_desc: "Salvați idei și apreciați favoritele.",
+});
+Object.assign(es, {
+  wishlist: "Lista de deseos", wishlist_desc: "Reúne los lugares, alojamientos, comidas y experiencias que el grupo quiere probar.",
+  wishlist_summary: "Resumen de la lista", ideas: "Ideas", likes: "Me gusta", most_loved: "Más populares", add_idea: "Añadir idea",
+  new_idea: "Nueva idea", new_idea_desc: "Guarda una idea y deja que el grupo muestre cuáles le gustan.", idea_title: "Idea",
+  idea_title_placeholder: "Paseo en barco al atardecer", idea_category: "Categoría", idea_details: "Notas",
+  idea_details_placeholder: "Por qué parece buena, posibles fechas u otros detalles…", idea_link: "Enlace (opcional)", idea_link_placeholder: "ejemplo.com/idea",
+  save_idea: "Guardar idea", filter_ideas: "Filtrar ideas", liking_as: "Indicas que te gusta como", sort_by: "Ordenar por", newest: "Más recientes",
+  no_wishlist_ideas: "Aún no hay ideas", no_wishlist_ideas_desc: "Añade la primera posibilidad y deja que todos marquen sus favoritas.",
+  no_filtered_ideas: "Todavía no hay ideas en esta categoría.", add_first_idea: "Añadir la primera idea", like_idea: "Me gusta", unlike_idea: "Ya no me gusta",
+  no_likes_yet: "Aún no tiene me gusta", added_by: "Añadida por {name}", shared_idea: "Idea compartida", open_idea_link: "Abrir enlace", remove_idea: "Eliminar idea",
+  remove_idea_confirm: "¿Eliminar esta idea de la lista del grupo?", wish_category_all: "Todas", wish_category_place: "Lugares", wish_category_stay: "Alojamientos",
+  wish_category_food: "Comida", wish_category_activity: "Actividades", wish_category_other: "Otras", more: "Más",
+  more_desc: "Resumen, decisiones del grupo e ideas guardadas.", more_overview_desc: "Personas, saldos y fechas del viaje.",
+  more_decisions_desc: "Votad juntos antes de reservar.", more_wishlist_desc: "Guardad ideas y marcad las favoritas.",
+});
+Object.assign(fr, {
+  wishlist: "Liste d’envies", wishlist_desc: "Rassemblez les lieux, hébergements, restaurants et expériences que le groupe aimerait essayer.",
+  wishlist_summary: "Résumé de la liste", ideas: "Idées", likes: "J’aime", most_loved: "Plus appréciées", add_idea: "Ajouter une idée",
+  new_idea: "Nouvelle idée", new_idea_desc: "Enregistrez une idée et laissez le groupe montrer ses préférences.", idea_title: "Idée",
+  idea_title_placeholder: "Balade en bateau au coucher du soleil", idea_category: "Catégorie", idea_details: "Notes",
+  idea_details_placeholder: "Pourquoi elle semble intéressante, dates possibles ou autres détails…", idea_link: "Lien (facultatif)", idea_link_placeholder: "exemple.fr/idee",
+  save_idea: "Enregistrer", filter_ideas: "Filtrer les idées", liking_as: "Vous aimez en tant que", sort_by: "Trier par", newest: "Plus récentes",
+  no_wishlist_ideas: "Aucune idée pour le moment", no_wishlist_ideas_desc: "Ajoutez la première possibilité et laissez chacun choisir ses favorites.",
+  no_filtered_ideas: "Aucune idée dans cette catégorie.", add_first_idea: "Ajouter la première idée", like_idea: "J’aime", unlike_idea: "Je n’aime plus",
+  no_likes_yet: "Aucun J’aime", added_by: "Ajoutée par {name}", shared_idea: "Idée partagée", open_idea_link: "Ouvrir le lien", remove_idea: "Supprimer l’idée",
+  remove_idea_confirm: "Supprimer cette idée de la liste du groupe ?", wish_category_all: "Toutes", wish_category_place: "Lieux", wish_category_stay: "Hébergements",
+  wish_category_food: "Repas", wish_category_activity: "Activités", wish_category_other: "Autres", more: "Plus",
+  more_desc: "Vue d’ensemble, décisions et idées enregistrées.", more_overview_desc: "Membres, soldes et dates du voyage.",
+  more_decisions_desc: "Votez ensemble avant de réserver.", more_wishlist_desc: "Enregistrez des idées et aimez vos favorites.",
+});
+Object.assign(de, {
+  wishlist: "Wunschliste", wishlist_desc: "Sammelt Orte, Unterkünfte, Restaurants und Erlebnisse, die eure Gruppe ausprobieren möchte.",
+  wishlist_summary: "Zusammenfassung", ideas: "Ideen", likes: "Likes", most_loved: "Beliebteste", add_idea: "Idee hinzufügen",
+  new_idea: "Neue Idee", new_idea_desc: "Speichere eine Idee und lass die Gruppe ihre Favoriten zeigen.", idea_title: "Idee",
+  idea_title_placeholder: "Bootstour bei Sonnenuntergang", idea_category: "Kategorie", idea_details: "Notizen",
+  idea_details_placeholder: "Warum sie interessant ist, mögliche Termine oder weitere Details…", idea_link: "Link (optional)", idea_link_placeholder: "beispiel.de/idee",
+  save_idea: "Idee speichern", filter_ideas: "Ideen filtern", liking_as: "Gefällt mir als", sort_by: "Sortieren nach", newest: "Neueste",
+  no_wishlist_ideas: "Noch keine Ideen", no_wishlist_ideas_desc: "Füge die erste Möglichkeit hinzu, damit alle ihre Favoriten markieren können.",
+  no_filtered_ideas: "In dieser Kategorie gibt es noch keine Ideen.", add_first_idea: "Erste Idee hinzufügen", like_idea: "Idee liken", unlike_idea: "Like entfernen",
+  no_likes_yet: "Noch keine Likes", added_by: "Hinzugefügt von {name}", shared_idea: "Gemeinsame Idee", open_idea_link: "Link öffnen", remove_idea: "Idee entfernen",
+  remove_idea_confirm: "Diese Idee aus der Gruppen-Wunschliste entfernen?", wish_category_all: "Alle", wish_category_place: "Orte", wish_category_stay: "Unterkünfte",
+  wish_category_food: "Essen", wish_category_activity: "Aktivitäten", wish_category_other: "Andere", more: "Mehr",
+  more_desc: "Übersicht, Gruppenentscheidungen und gespeicherte Ideen.", more_overview_desc: "Personen, Salden und Reisedaten.",
+  more_decisions_desc: "Stimmt gemeinsam vor der Buchung ab.", more_wishlist_desc: "Speichert Ideen und markiert eure Favoriten.",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

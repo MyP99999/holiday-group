@@ -23,7 +23,10 @@ import {
 export default function SettlePage() {
   const navigate = useNavigate();
   const { t, locale } = useLanguage();
-  const { rateDate } = useCurrencyRates();
+  const {
+    rateDate,
+    selectedCurrency: currency, setSelectedCurrency: setCurrency,
+  } = useCurrencyRates();
   const {
     people, expenses, accommodations, vehicles, flights, otherCosts,
     paymentRoutes, setPaymentRoutes,
@@ -31,7 +34,6 @@ export default function SettlePage() {
     currentMemberId, currentPerson, canManageMembers, canModerateMembers, moderateMember,
     activityLog, updateTripState,
   } = useApp();
-  const [currency, setCurrency] = useState("EUR");
   const [activeTab, setActiveTab] = useState("pending");
   const [confirmingPayment, setConfirmingPayment] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState("");

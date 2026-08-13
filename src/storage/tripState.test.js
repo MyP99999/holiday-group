@@ -63,3 +63,17 @@ describe("trip date defaults", () => {
     expect(normalizeTripState({ tripStartDate: "2026-08-15", tripEndDate: "2026-08-11" }).tripEndDate).toBe("");
   });
 });
+
+describe("wishlist defaults", () => {
+  it("normalizes ideas and removes duplicate likes", () => {
+    const state = normalizeTripState({
+      wishlistIdeas: [{ id: "idea-1", title: "Boat tour", category: "activity", likedByIds: [1, "1", 2] }],
+    });
+
+    expect(state.wishlistIdeas[0]).toMatchObject({
+      title: "Boat tour",
+      category: "activity",
+      likedByIds: ["1", "2"],
+    });
+  });
+});

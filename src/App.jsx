@@ -21,6 +21,8 @@ import RestaurantPage from "./pages/RestaurantPage";
 import SettlePage from "./pages/SettlePage";
 import PlanPage from "./pages/PlanPage";
 import DecisionsPage from "./pages/DecisionsPage";
+import WishlistPage from "./pages/WishlistPage";
+import MorePage from "./pages/MorePage";
 import ChatPage from "./pages/ChatPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
@@ -88,6 +90,8 @@ export default function App() {
             <Route path="settle" element={<SettlePage />} />
             <Route path="plan" element={<PlanPage />} />
             <Route path="decisions" element={<DecisionsPage />} />
+            <Route path="wishlist" element={<WishlistPage />} />
+            <Route path="more" element={<MorePage />} />
             <Route path="chat" element={<ChatPage />} />
           </Route>
 
@@ -118,6 +122,8 @@ export default function App() {
             <Route path="settle" element={<SettlePage />} />
             <Route path="plan" element={<PlanPage />} />
             <Route path="decisions" element={<DecisionsPage />} />
+            <Route path="wishlist" element={<WishlistPage />} />
+            <Route path="more" element={<MorePage />} />
             <Route path="chat" element={<ChatPage />} />
           </Route>
 

@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
 import { createId } from "../storage/tripState";
@@ -10,16 +10,100 @@ export function chatDayKey(value) {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
 }
 
+export const CHAT_PAGE_SIZE = 15;
+
+export function initialChatStart(messageCount, pageSize = CHAT_PAGE_SIZE) {
+  return Math.max(0, messageCount - pageSize);
+}
+
+export function previousChatStart(currentStart, pageSize = CHAT_PAGE_SIZE) {
+  return Math.max(0, currentStart - pageSize);
+}
+
 export default function ChatPanel() {
   const { t, locale } = useLanguage();
   const { people, chatMessages, setChatMessages, currentMemberId } = useApp();
   const [senderId, setSenderId] = useState(() => String(currentMemberId || people[0]?.id || ""));
   const [message, setMessage] = useState("");
+  const [visibleStart, setVisibleStart] = useState(() => initialChatStart(chatMessages.length));
+  const streamRef = useRef(null);
+  const prependMetricsRef = useRef(null);
+  const loadingOlderRef = useRef(false);
+  const stickToBottomRef = useRef(true);
+  const scrollToBottomRef = useRef(true);
+  const previousMessageCountRef = useRef(chatMessages.length);
+  const visibleMessages = useMemo(() => chatMessages.slice(visibleStart), [chatMessages, visibleStart]);
+
+  const loadOlderMessages = useCallback(() => {
+    if (loadingOlderRef.current) return;
+    const stream = streamRef.current;
+    setVisibleStart((currentStart) => {
+      const nextStart = previousChatStart(currentStart);
+      if (nextStart === currentStart) return currentStart;
+      loadingOlderRef.current = true;
+      prependMetricsRef.current = stream
+        ? { scrollHeight: stream.scrollHeight, scrollTop: stream.scrollTop }
+        : null;
+      return nextStart;
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    const stream = streamRef.current;
+    if (!stream) return;
+
+    if (prependMetricsRef.current) {
+      const { scrollHeight, scrollTop } = prependMetricsRef.current;
+      stream.scrollTop = stream.scrollHeight - scrollHeight + scrollTop;
+      prependMetricsRef.current = null;
+      loadingOlderRef.current = false;
+      return;
+    }
+
+    if (scrollToBottomRef.current) {
+      stream.scrollTop = stream.scrollHeight;
+      scrollToBottomRef.current = false;
+    }
+  }, [visibleStart, visibleMessages.length]);
+
+  useLayoutEffect(() => {
+    const previousCount = previousMessageCountRef.current;
+    const messageCount = chatMessages.length;
+    previousMessageCountRef.current = messageCount;
+
+    if (messageCount > previousCount && stickToBottomRef.current) {
+      scrollToBottomRef.current = true;
+      const nextStart = initialChatStart(messageCount);
+      if (nextStart !== visibleStart) {
+        setVisibleStart(nextStart);
+      } else if (streamRef.current) {
+        streamRef.current.scrollTop = streamRef.current.scrollHeight;
+        scrollToBottomRef.current = false;
+      }
+    } else if (messageCount < previousCount) {
+      scrollToBottomRef.current = true;
+      const nextStart = initialChatStart(messageCount);
+      if (nextStart !== visibleStart) {
+        setVisibleStart(nextStart);
+      } else if (streamRef.current) {
+        streamRef.current.scrollTop = streamRef.current.scrollHeight;
+        scrollToBottomRef.current = false;
+      }
+    }
+  }, [chatMessages.length, visibleStart]);
+
+  const handleChatScroll = () => {
+    const stream = streamRef.current;
+    if (!stream) return;
+    stickToBottomRef.current = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 48;
+    if (stream.scrollTop <= 24 && visibleStart > 0) loadOlderMessages();
+  };
 
   const sendMessage = () => {
     const text = message.trim();
     const authorId = currentMemberId || senderId || people[0]?.id;
     if (!text || !authorId) return;
+    stickToBottomRef.current = true;
     setChatMessages((current) => [...current, {
       id: createId("message"),
       authorId,
@@ -35,13 +119,15 @@ export default function ChatPanel() {
         <div><h2>{t("group_chat")}</h2><p>{t("chat_desc")}</p></div>
       </div>
 
-      <div className="chat-stream" aria-live="polite">
-        {chatMessages.length ? chatMessages.map((item, messageIndex) => {
+      <div ref={streamRef} className="chat-stream" role="log" aria-live="polite" onScroll={handleChatScroll}>
+        {visibleStart > 0 && <div className="chat-history-hint">{t("scroll_for_older_messages")}</div>}
+        {visibleStart === 0 && chatMessages.length > CHAT_PAGE_SIZE && <div className="chat-history-hint">{t("start_of_conversation")}</div>}
+        {chatMessages.length ? visibleMessages.map((item, messageIndex) => {
           const authorIndex = people.findIndex((person) => String(person.id) === String(item.authorId));
           const author = people[authorIndex];
           const sentAt = new Date(item.createdAt);
           const dayKey = chatDayKey(item.createdAt);
-          const previousDayKey = messageIndex ? chatDayKey(chatMessages[messageIndex - 1]?.createdAt) : "";
+          const previousDayKey = messageIndex ? chatDayKey(visibleMessages[messageIndex - 1]?.createdAt) : "";
           return (
             <Fragment key={item.id}>
               {dayKey && dayKey !== previousDayKey && (

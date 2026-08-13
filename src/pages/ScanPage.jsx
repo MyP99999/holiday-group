@@ -5,6 +5,7 @@ import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
 import { fmt } from "../utils";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrencyRates } from "../context/CurrencyRatesContext";
 
 const sampleItems = [
   { id: "seafood", description: "Seafood pasta", amount: 24, participantIds: [] },
@@ -16,10 +17,11 @@ const sampleItems = [
 export function ScanExpenseForm() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { selectedCurrency } = useCurrencyRates();
   const inputRef = useRef(null);
   const { people, setExpenses } = useApp();
   const [items, setItems] = useState([]);
-  const [currency, setCurrency] = useState("EUR");
+  const [currency, setCurrency] = useState(selectedCurrency);
   const [paidById, setPaidById] = useState("");
   const [receiptName, setReceiptName] = useState("Lido receipt");
   const [preview, setPreview] = useState("");

@@ -75,4 +75,21 @@ describe("online trip state compatibility", () => {
     expect(restored.tripEndDate).toBe(original.tripEndDate);
     expect(restored.settlementPayments).toEqual([]);
   });
+
+  test("stores shared wishlist ideas without exposing them as payments", () => {
+    const original = {
+      settlementPayments: [],
+      logisticsPayments: [],
+      activityLog: [],
+      wishlistIdeas: [{ id: "wishlist-1", title: "Sunset boat tour", likedByIds: ["maya"] }],
+    };
+    const packed = packOnlineTripState(original);
+    expect(packed.settlementPayments).toEqual([
+      expect.objectContaining({ id: "wishlist-1", storageType: "wishlist-idea" }),
+    ]);
+
+    const restored = unpackOnlineTripState(packed);
+    expect(restored.wishlistIdeas).toEqual(original.wishlistIdeas);
+    expect(restored.settlementPayments).toEqual([]);
+  });
 });

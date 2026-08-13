@@ -1,6 +1,7 @@
 const OTHER_COST_STORAGE_TYPE = "logistics-other-cost";
 const LOGISTICS_PAYMENT_STORAGE_TYPE = "logistics-payment";
 const ACTIVITY_STORAGE_TYPE = "activity-entry";
+const WISHLIST_STORAGE_TYPE = "wishlist-idea";
 const TRIP_DATES_STORAGE_TYPE = "trip-dates";
 const TRIP_DATES_STORAGE_ID = "__trip-dates__";
 
@@ -30,15 +31,19 @@ export function unpackOnlineTripState(state = {}) {
   const embeddedActivityLog = settlementPayments
     .filter((item) => item?.storageType === ACTIVITY_STORAGE_TYPE)
     .map(withoutStorageType);
+  const embeddedWishlistIdeas = settlementPayments
+    .filter((item) => item?.storageType === WISHLIST_STORAGE_TYPE)
+    .map(withoutStorageType);
   const embeddedTripDates = settlementPayments.find((item) => item?.storageType === TRIP_DATES_STORAGE_TYPE);
 
   return {
     ...state,
     expenses: expenses.filter((item) => item?.storageType !== OTHER_COST_STORAGE_TYPE),
     otherCosts: mergeById(state.otherCosts || [], embeddedOtherCosts),
-    settlementPayments: settlementPayments.filter((item) => item?.storageType !== LOGISTICS_PAYMENT_STORAGE_TYPE && item?.source !== "logistics" && item?.storageType !== ACTIVITY_STORAGE_TYPE && item?.storageType !== TRIP_DATES_STORAGE_TYPE),
+    settlementPayments: settlementPayments.filter((item) => item?.storageType !== LOGISTICS_PAYMENT_STORAGE_TYPE && item?.source !== "logistics" && item?.storageType !== ACTIVITY_STORAGE_TYPE && item?.storageType !== WISHLIST_STORAGE_TYPE && item?.storageType !== TRIP_DATES_STORAGE_TYPE),
     logisticsPayments: mergeById(state.logisticsPayments || [], embeddedLogisticsPayments),
     activityLog: mergeById(state.activityLog || [], embeddedActivityLog),
+    wishlistIdeas: mergeById(state.wishlistIdeas || [], embeddedWishlistIdeas),
     tripStartDate: state.tripStartDate || embeddedTripDates?.startDate || "",
     tripEndDate: state.tripEndDate || embeddedTripDates?.endDate || "",
   };
@@ -47,7 +52,7 @@ export function unpackOnlineTripState(state = {}) {
 export function packOnlineTripState(state = {}) {
   const expenses = (state.expenses || []).filter((item) => item?.storageType !== OTHER_COST_STORAGE_TYPE);
   const settlementPayments = (state.settlementPayments || [])
-    .filter((item) => item?.storageType !== LOGISTICS_PAYMENT_STORAGE_TYPE && item?.source !== "logistics" && item?.storageType !== ACTIVITY_STORAGE_TYPE && item?.storageType !== TRIP_DATES_STORAGE_TYPE);
+    .filter((item) => item?.storageType !== LOGISTICS_PAYMENT_STORAGE_TYPE && item?.source !== "logistics" && item?.storageType !== ACTIVITY_STORAGE_TYPE && item?.storageType !== WISHLIST_STORAGE_TYPE && item?.storageType !== TRIP_DATES_STORAGE_TYPE);
 
   return {
     ...state,
@@ -59,6 +64,7 @@ export function packOnlineTripState(state = {}) {
       ...settlementPayments,
       ...(state.logisticsPayments || []).map((payment) => ({ ...payment, storageType: LOGISTICS_PAYMENT_STORAGE_TYPE })),
       ...(state.activityLog || []).map((entry) => ({ ...entry, storageType: ACTIVITY_STORAGE_TYPE })),
+      ...(state.wishlistIdeas || []).map((idea) => ({ ...idea, storageType: WISHLIST_STORAGE_TYPE })),
       ...((state.tripStartDate || state.tripEndDate) ? [{
         id: TRIP_DATES_STORAGE_ID,
         storageType: TRIP_DATES_STORAGE_TYPE,

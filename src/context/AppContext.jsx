@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { normalizeTripState } from "../storage/tripState";
 import { appendActivity, createActivityEntry } from "../utils/activityLog";
 
@@ -16,7 +16,10 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
   const [loadError, setLoadError] = useState("");
   const [syncError, setSyncError] = useState("");
   const [pendingWrites, setPendingWrites] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const localRevisionRef = useRef(0);
+  const refreshInFlightRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -70,6 +73,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
     if (!previous) return;
     const value = typeof updater === "function" ? updater(previous[field]) : updater;
     const next = { ...previous, [field]: value };
+    localRevisionRef.current += 1;
     stateRef.current = next;
     setState(next);
     persist(next);
@@ -80,10 +84,37 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
     if (!previous || typeof updater !== "function") return;
     const next = updater(previous);
     if (!next || next === previous) return;
+    localRevisionRef.current += 1;
     stateRef.current = next;
     setState(next);
     persist(next);
   };
+
+  const refreshData = useCallback(async () => {
+    if (refreshInFlightRef.current || typeof driver.read !== "function") return false;
+
+    refreshInFlightRef.current = true;
+    setIsRefreshing(true);
+    setSyncError("");
+    const revisionAtStart = localRevisionRef.current;
+
+    try {
+      const refreshed = normalizeTripState(await driver.read());
+
+      // Do not replace an edit made while the server request was running.
+      if (localRevisionRef.current !== revisionAtStart) return true;
+
+      stateRef.current = refreshed;
+      setState(refreshed);
+      return true;
+    } catch (error) {
+      setSyncError(error.message || "The latest trip data could not be loaded.");
+      return false;
+    } finally {
+      refreshInFlightRef.current = false;
+      setIsRefreshing(false);
+    }
+  }, [driver]);
 
   if (!state) {
     return (
@@ -125,6 +156,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
         ? { ...person, ...details }
         : person),
     };
+    localRevisionRef.current += 1;
     stateRef.current = next;
     setState(next);
     setSyncError("");
@@ -183,6 +215,9 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
       updateMemberProfile,
       moderateMember,
       updateTripState,
+      canRefresh: Boolean(driver.isAsync && typeof driver.read === "function"),
+      refreshData,
+      isRefreshing,
       isSyncing: pendingWrites > 0,
       syncError,
       setPeople: (updater) => setField("people", updater),
@@ -192,6 +227,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
       setFlights: (updater) => setField("flights", updater),
       setOtherCosts: (updater) => setField("otherCosts", updater),
       setPolls: (updater) => setField("polls", updater),
+      setWishlistIdeas: (updater) => setField("wishlistIdeas", updater),
       setComments: (updater) => setField("comments", updater),
       setChatMessages: (updater) => setField("chatMessages", updater),
       setPaymentRoutes: (updater) => setField("paymentRoutes", updater),

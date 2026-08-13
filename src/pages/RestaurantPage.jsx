@@ -4,6 +4,7 @@ import CurrencySelect from "../components/CurrencySelect";
 import { useApp } from "../context/AppContext";
 import { fmt } from "../utils";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrencyRates } from "../context/CurrencyRatesContext";
 
 function starterItems(people) {
   if (!people.length) return [];
@@ -17,9 +18,10 @@ function starterItems(people) {
 export function RestaurantExpenseForm() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { selectedCurrency } = useCurrencyRates();
   const { people, setExpenses } = useApp();
   const [restaurantName, setRestaurantName] = useState("Restaurant bill");
-  const [currency, setCurrency] = useState("EUR");
+  const [currency, setCurrency] = useState(selectedCurrency);
   const [paidById, setPaidById] = useState("");
   const [items, setItems] = useState([]);
   const [tip, setTip] = useState(10);

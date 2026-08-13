@@ -28,11 +28,13 @@ export default function ExpensesPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, locale } = useLanguage();
-  const { rateDate, status: rateStatus } = useCurrencyRates();
+  const {
+    rateDate, status: rateStatus,
+    selectedCurrency: displayCurrency, setSelectedCurrency: setDisplayCurrency,
+  } = useCurrencyRates();
   const formRef = useRef(null);
   const { people, expenses, setExpenses, updateTripState, currentPerson } = useApp();
-  const [displayCurrency, setDisplayCurrency] = useState("EUR");
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => ({ ...emptyForm, currency: displayCurrency }));
   const [error, setError] = useState("");
   const [expenseToEdit, setExpenseToEdit] = useState(null);
   const [editForm, setEditForm] = useState(emptyForm);
@@ -77,6 +79,11 @@ export default function ExpensesPage() {
 
   const openExpenseMode = (mode) => {
     setExpenseMode(mode);
+    if (mode === "manual") {
+      setForm((current) => (
+        current.description || current.amount ? current : { ...current, currency: displayCurrency }
+      ));
+    }
     window.requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 

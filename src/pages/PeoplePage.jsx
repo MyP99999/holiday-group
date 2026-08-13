@@ -16,13 +16,15 @@ import { formatTripDate, formatTripDateRange } from "../utils/tripDates";
 export default function PeoplePage() {
   const navigate = useNavigate();
   const { t, locale } = useLanguage();
-  const { rates, rateDate, status: rateStatus, isRefreshing, refreshRates } = useCurrencyRates();
+  const {
+    rates, rateDate, status: rateStatus, isRefreshing, refreshRates,
+    selectedCurrency: displayCurrency, setSelectedCurrency: setDisplayCurrency,
+  } = useCurrencyRates();
   const {
     people, setPeople, tripStartDate, tripEndDate, expenses, accommodations, vehicles, flights, otherCosts,
     settlementPayments, logisticsPayments, currentMemberId, canManageMembers,
   } = useApp();
   const [name, setName] = useState("");
-  const [displayCurrency, setDisplayCurrency] = useState("EUR");
   const logisticsExpenses = useMemo(() => buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts }), [accommodations, vehicles, flights, otherCosts]);
   const allExpenses = useMemo(() => [...expenses, ...logisticsExpenses], [expenses, logisticsExpenses]);
   const allPayments = useMemo(() => [...settlementPayments, ...logisticsPayments], [settlementPayments, logisticsPayments]);

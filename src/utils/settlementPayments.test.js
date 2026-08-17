@@ -1,4 +1,5 @@
 import {
+  calculateExpenseSettlements,
   canConfirmSettlementPayment,
   editablePaymentLimitEUR,
   getSettlementPaymentReasons,
@@ -76,6 +77,58 @@ describe("settlement payment confirmation", () => {
     ]);
   });
 
+  test("keeps expense payments tied to the original payer and reason", () => {
+    const people = [{ id: "alex" }, { id: "bea" }, { id: "chris" }];
+    const expenses = [{
+      id: "villa",
+      description: "Villa",
+      amount: 300,
+      currency: "EUR",
+      paidById: "alex",
+      participantIds: ["alex", "bea", "chris"],
+    }];
+
+    expect(calculateExpenseSettlements(people, expenses)).toEqual([
+      expect.objectContaining({ from: "bea", to: "alex", amountEUR: 100, expenseId: "villa", reason: "Villa" }),
+      expect.objectContaining({ from: "chris", to: "alex", amountEUR: 100, expenseId: "villa", reason: "Villa" }),
+    ]);
+  });
+
+  test("reduces a detailed expense payment without merging the other payment", () => {
+    const people = [{ id: "alex" }, { id: "bea" }, { id: "chris" }];
+    const expenses = [{
+      id: "villa",
+      description: "Villa",
+      amount: 300,
+      currency: "EUR",
+      paidById: "alex",
+      participantIds: ["alex", "bea", "chris"],
+    }];
+    const payments = [{
+      fromId: "bea",
+      toId: "alex",
+      expenseId: "villa",
+      settlementMethod: "expense",
+      amountEUR: 40,
+    }];
+
+    expect(calculateExpenseSettlements(people, expenses, payments)).toEqual([
+      expect.objectContaining({ from: "bea", to: "alex", amountEUR: 60, reason: "Villa" }),
+      expect.objectContaining({ from: "chris", to: "alex", amountEUR: 100, reason: "Villa" }),
+    ]);
+  });
+
+  test("applies an optimized payment across a chain of detailed obligations", () => {
+    const people = [{ id: "alex" }, { id: "bea" }, { id: "chris" }];
+    const expenses = [
+      { id: "dinner", description: "Dinner", amount: 20, currency: "EUR", paidById: "bea", participantIds: ["alex", "bea"] },
+      { id: "taxi", description: "Taxi", amount: 20, currency: "EUR", paidById: "chris", participantIds: ["bea", "chris"] },
+    ];
+    const payments = [{ fromId: "alex", toId: "chris", expenseId: "dinner", amountEUR: 10 }];
+
+    expect(calculateExpenseSettlements(people, expenses, payments)).toEqual([]);
+  });
+
   test("removes a settlement that only belonged to a deleted expense", () => {
     const payments = [{ id: "paid", fromId: "payer", toId: "recipient", amountEUR: 100 }];
 
@@ -111,6 +164,14 @@ describe("settlement payment confirmation", () => {
 
     expect(editablePaymentLimitEUR(people, expenses, payments, "editing")).toBe(80);
     expect(editablePaymentLimitEUR(people, expenses, payments, "missing")).toBe(0);
+  });
+
+  test("limits an edited detailed payment to its expense share", () => {
+    const people = [{ id: "alex" }, { id: "bea" }];
+    const expenses = [{ id: "dinner", amount: 100, currency: "EUR", paidById: "alex", participantIds: ["alex", "bea"] }];
+    const payments = [{ id: "editing", fromId: "bea", toId: "alex", expenseId: "dinner", settlementMethod: "expense", amountEUR: 20 }];
+
+    expect(editablePaymentLimitEUR(people, expenses, payments, "editing")).toBe(50);
   });
 
   test("formats stored payment dates for a datetime-local input", () => {

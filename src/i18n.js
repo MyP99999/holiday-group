@@ -1238,6 +1238,42 @@ Object.assign(de, {
   more_decisions_desc: "Stimmt gemeinsam vor der Buchung ab.", more_wishlist_desc: "Speichert Ideen und markiert eure Favoriten.",
 });
 
+Object.assign(en, {
+  settle_desc: "Choose a clear payment for each expense, or reduce the group to the fewest payments.",
+  settlement_method: "Settlement method", by_expense: "By expense", primary: "Primary",
+  by_expense_desc: "See who pays whom and exactly which cost each payment covers.",
+  fewest_payments: "Fewest payments", fewest_payments_desc: "Net all balances into the smallest number of transfers.",
+  expense_route_help: "Each payment stays tied to the person who covered the cost and its reason.",
+});
+Object.assign(ro, {
+  settle_desc: "Alege o plată clară pentru fiecare cheltuială sau redu grupul la cât mai puține plăți.",
+  settlement_method: "Metoda de decontare", by_expense: "După cheltuială", primary: "Principală",
+  by_expense_desc: "Vezi cine plătește, cui plătește și exact ce cost acoperă fiecare plată.",
+  fewest_payments: "Cele mai puține plăți", fewest_payments_desc: "Compensează soldurile în cel mai mic număr de transferuri.",
+  expense_route_help: "Fiecare plată rămâne legată de persoana care a acoperit costul și de motivul ei.",
+});
+Object.assign(es, {
+  settle_desc: "Elige un pago claro para cada gasto o reduce el grupo al mínimo de pagos.",
+  settlement_method: "Método de liquidación", by_expense: "Por gasto", primary: "Principal",
+  by_expense_desc: "Muestra quién paga a quién y qué gasto cubre exactamente cada pago.",
+  fewest_payments: "Mínimo de pagos", fewest_payments_desc: "Compensa todos los saldos con el menor número de transferencias.",
+  expense_route_help: "Cada pago queda vinculado a quien cubrió el gasto y a su motivo.",
+});
+Object.assign(fr, {
+  settle_desc: "Choisissez un paiement clair par dépense ou réduisez le groupe au minimum de paiements.",
+  settlement_method: "Méthode de règlement", by_expense: "Par dépense", primary: "Principale",
+  by_expense_desc: "Voyez qui paie qui et quelle dépense chaque paiement couvre exactement.",
+  fewest_payments: "Minimum de paiements", fewest_payments_desc: "Compensez tous les soldes avec le moins de virements possible.",
+  expense_route_help: "Chaque paiement reste lié à la personne qui a avancé le coût et à son motif.",
+});
+Object.assign(de, {
+  settle_desc: "Wähle eine klare Zahlung pro Ausgabe oder reduziere die Gruppe auf möglichst wenige Zahlungen.",
+  settlement_method: "Ausgleichsmethode", by_expense: "Nach Ausgabe", primary: "Primär",
+  by_expense_desc: "Zeigt, wer an wen zahlt und welche Kosten jede Zahlung genau abdeckt.",
+  fewest_payments: "Wenigste Zahlungen", fewest_payments_desc: "Verrechnet alle Salden mit der kleinsten Anzahl an Überweisungen.",
+  expense_route_help: "Jede Zahlung bleibt mit der Person, die die Kosten übernommen hat, und ihrem Grund verknüpft.",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

@@ -12,6 +12,7 @@ import { buildLogisticsExpenses } from "../utils/logisticsCosts";
 import { isMemberClaimed } from "../utils/memberClaims";
 import { appendActivity, createActivityEntry } from "../utils/activityLog";
 import {
+  calculateExpenseSettlements,
   canConfirmSettlementPayment,
   editablePaymentLimitEUR,
   getSettlementPaymentReasons,
@@ -35,6 +36,7 @@ export default function SettlePage() {
     activityLog, updateTripState,
   } = useApp();
   const [activeTab, setActiveTab] = useState("pending");
+  const [settlementMethod, setSettlementMethod] = useState("expense");
   const [confirmingPayment, setConfirmingPayment] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentReasonId, setPaymentReasonId] = useState("");
@@ -57,13 +59,18 @@ export default function SettlePage() {
     () => calculateSettlements(people, allExpenses, allPayments),
     [people, allExpenses, allPayments, rateDate]
   );
+  const expenseTransactions = useMemo(
+    () => calculateExpenseSettlements(people, allExpenses, allPayments),
+    [people, allExpenses, allPayments, rateDate]
+  );
+  const pendingTransactions = settlementMethod === "expense" ? expenseTransactions : transactions;
   const paymentHistory = useMemo(
     () => [...allPayments].sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt)),
     [allPayments]
   );
-  const orderedTransactions = useMemo(() => [...transactions].sort((left, right) => (
+  const orderedTransactions = useMemo(() => [...pendingTransactions].sort((left, right) => (
     Number(String(right.from) === String(currentMemberId)) - Number(String(left.from) === String(currentMemberId))
-  )), [transactions, currentMemberId]);
+  )), [pendingTransactions, currentMemberId]);
   const orderedActivity = useMemo(
     () => [...(activityLog || [])].sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt)),
     [activityLog]
@@ -115,15 +122,24 @@ export default function SettlePage() {
   const openPaymentConfirmation = (transaction, viaId) => {
     if (!canConfirmSettlementPayment(transaction, currentMemberId, canManageMembers)) return;
     setPaymentAmount("");
-    setPaymentReasonId("");
     setPaymentError("");
+    const isExpenseSettlement = transaction.settlementMethod === "expense" && transaction.expenseId;
+    const reasonOptions = isExpenseSettlement ? [{
+      expenseId: transaction.expenseId,
+      title: transaction.reason,
+      payeeId: transaction.to,
+      source: transaction.expenseSource,
+      remainingEUR: transaction.amountEUR,
+    }] : getSettlementPaymentReasons(transaction, allExpenses, allPayments);
+    setPaymentReasonId(isExpenseSettlement ? transaction.expenseId : "");
     setConfirmingPayment({
       transaction,
+      method: isExpenseSettlement ? "expense" : "minimum",
       viaId,
       from: personById(transaction.from),
       to: personById(transaction.to),
       via: viaId ? personById(viaId) : null,
-      reasonOptions: getSettlementPaymentReasons(transaction, allExpenses, allPayments),
+      reasonOptions,
     });
   };
 
@@ -170,6 +186,7 @@ export default function SettlePage() {
       expenseId: selectedPaymentReason.expenseId,
       expenseSource: selectedPaymentReason.source,
       reason,
+      settlementMethod: confirmingPayment.method,
       amountEUR,
       confirmedById: currentMemberId || "",
       isPartial: !isFullPayment,
@@ -309,14 +326,36 @@ export default function SettlePage() {
           </section>
 
           <section className="surface-panel payment-panel">
-            <div className="panel-heading settle-payment-heading"><div><h2>{t("payments_to_make")}</h2><p>{t("route_help")}</p></div></div>
+            <div className="panel-heading settle-payment-heading"><div><h2>{t("payments_to_make")}</h2><p>{t(settlementMethod === "expense" ? "expense_route_help" : "route_help")}</p></div></div>
+            <div className="settlement-methods" role="radiogroup" aria-label={t("settlement_method")}>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={settlementMethod === "expense"}
+                className={`settlement-method-option${settlementMethod === "expense" ? " active" : ""}`}
+                onClick={() => setSettlementMethod("expense")}
+              >
+                <span><strong>{t("by_expense")}</strong><small>{t("primary")}</small></span>
+                <em>{t("by_expense_desc")}</em>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={settlementMethod === "minimum"}
+                className={`settlement-method-option${settlementMethod === "minimum" ? " active" : ""}`}
+                onClick={() => setSettlementMethod("minimum")}
+              >
+                <span><strong>{t("fewest_payments")}</strong></span>
+                <em>{t("fewest_payments_desc")}</em>
+              </button>
+            </div>
             <div className="settle-tabs" role="tablist" aria-label={t("payments_to_make")}>
-              <button role="tab" aria-selected={activeTab === "pending"} className={activeTab === "pending" ? "active" : ""} onClick={() => setActiveTab("pending")}>{t("pending")} <span>{transactions.length}</span></button>
+              <button role="tab" aria-selected={activeTab === "pending"} className={activeTab === "pending" ? "active" : ""} onClick={() => setActiveTab("pending")}>{t("pending")} <span>{pendingTransactions.length}</span></button>
               <button role="tab" aria-selected={activeTab === "history"} className={activeTab === "history" ? "active" : ""} onClick={() => setActiveTab("history")}>{t("history")} <span>{paymentHistory.length}</span></button>
               <button role="tab" aria-selected={activeTab === "actions"} className={activeTab === "actions" ? "active" : ""} onClick={() => setActiveTab("actions")}>{t("actions")} <span>{orderedActivity.length}</span></button>
             </div>
 
-            {activeTab === "pending" ? (transactions.length ? (
+            {activeTab === "pending" ? (pendingTransactions.length ? (
               <div className="payment-list">{orderedTransactions.map((transaction, index) => {
                 const routeKey = `${transaction.from}:${transaction.to}`;
                 const viaId = paymentRoutes[routeKey] || "";
@@ -330,6 +369,7 @@ export default function SettlePage() {
                       <span>{isYourPayment && <small className="your-payment-label">{t("your_payment")}</small>}<strong>{personName(transaction.from)}</strong> {t("pays")} <strong>{personName(transaction.to)}</strong></span>
                       <b>{amount}</b>
                     </div>
+                    {transaction.reason && <div className="payment-route-reason"><span>{t("payment_reason")}</span><strong>{transaction.reason}</strong></div>}
                     <label className="route-control">
                       <span>{t("cant_pay_direct")}</span>
                       <select value={viaId} onChange={(event) => setPaymentRoutes((current) => ({ ...current, [routeKey]: event.target.value }))}>
@@ -448,7 +488,7 @@ export default function SettlePage() {
               <b>{fmt(convert(confirmingPayment.transaction.amountEUR, "EUR", currency), currency)}</b>
               {confirmingPayment.via && <small className="confirm-payment-via">{t("paid_via", { name: confirmingPayment.via.name })}</small>}
             </div>
-            <label className="confirm-payment-reason">
+            {confirmingPayment.method !== "expense" && <label className="confirm-payment-reason">
               <span>{t("payment_reason")}</span>
               <select
                 autoFocus
@@ -466,7 +506,7 @@ export default function SettlePage() {
                   </option>
                 ))}
               </select>
-            </label>
+            </label>}
             {selectedPaymentReason && (
               <div className="confirm-reason-summary">
                 <span><small>{t("sum_to_pay")}</small><strong>{selectedPaymentReason.title}</strong></span>
@@ -477,6 +517,7 @@ export default function SettlePage() {
               <span>{t("payment_amount")}</span>
               <div>
                 <input
+                  autoFocus={confirmingPayment.method === "expense"}
                   type="number"
                   min="0.01"
                   max={convert(selectedMaximumAmountEUR, "EUR", currency) || undefined}

@@ -6,7 +6,7 @@ import CurrencySelect from "../components/CurrencySelect";
 import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
 import { CURRENCY_META } from "../constants";
-import { calculateBalances, convert, fmt } from "../utils";
+import { calculateBalances, convert, fmt, isBalanceSettled } from "../utils";
 import { createId, nextPersonColor } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
@@ -127,15 +127,17 @@ export default function PeoplePage() {
           {people.length ? (
             <div className="people-ledger">
               {people.map((person, index) => {
-                const balance = convert(balances[String(person.id)] || 0, "EUR", displayCurrency);
+                const balanceEUR = balances[String(person.id)] || 0;
+                const balance = convert(balanceEUR, "EUR", displayCurrency);
+                const isSettled = isBalanceSettled(balanceEUR);
                 return (
                   <div className="people-ledger-row" key={person.id}>
                     <button className="people-profile-link" onClick={() => navigate(String(person.id))} aria-label={t("view_member_profile", { name: person.name })}>
                       <PersonAvatar person={person} people={people} index={index} inControl />
                     <span className="person-name-cell"><strong>{person.name}</strong><small>{person.role === "admin" ? t("admin") : t("member")}{String(person.id) === String(currentMemberId) ? ` · ${t("you")}` : ""}</small></span>
                     </button>
-                    <span className={balance > 0.01 ? "money-positive" : balance < -0.01 ? "money-negative" : "money-muted"}>
-                      {balance > 0.01 ? `${t("gets")} ${fmt(balance, displayCurrency)}` : balance < -0.01 ? `${t("owes")} ${fmt(Math.abs(balance), displayCurrency)}` : t("settled")}
+                    <span className={isSettled ? "money-muted" : balance > 0 ? "money-positive" : "money-negative"}>
+                      {isSettled ? t("settled") : balance > 0 ? `${t("gets")} ${fmt(balance, displayCurrency)}` : `${t("owes")} ${fmt(Math.abs(balance), displayCurrency)}`}
                     </span>
                     <span className="people-row-actions">
                       {canManageMembers && <button className="row-action" onClick={() => toggleAdmin(person.id)}>{person.role === "admin" ? t("remove_admin") : t("make_admin")}</button>}

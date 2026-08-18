@@ -18,6 +18,14 @@ export function fmt(value, currency = "EUR") {
   return symbol.length > 2 ? `${symbol} ${formatted}` : `${symbol}${formatted}`;
 }
 
+export function settlementThresholdEUR() {
+  return convert(1, "RON", "EUR");
+}
+
+export function isBalanceSettled(balanceEUR) {
+  return Math.abs(Number(balanceEUR) || 0) < settlementThresholdEUR();
+}
+
 export function personColor(index, person) {
   if (person?.color) return person.color;
   if (index < PERSON_COLORS.length) return PERSON_COLORS[Math.max(0, index)];
@@ -64,11 +72,12 @@ export function calculateBalances(people, expenses, settlementPayments = []) {
 
 export function calculateSettlements(people, expenses, settlementPayments = []) {
   const balances = calculateBalances(people, expenses, settlementPayments);
+  const thresholdEUR = settlementThresholdEUR();
   const creditors = Object.entries(balances)
-    .filter(([, balance]) => balance > 0.005)
+    .filter(([, balance]) => balance >= thresholdEUR)
     .map(([id, amount]) => ({ id, amount }));
   const debtors = Object.entries(balances)
-    .filter(([, balance]) => balance < -0.005)
+    .filter(([, balance]) => balance <= -thresholdEUR)
     .map(([id, amount]) => ({ id, amount: -amount }));
 
   const transactions = [];
@@ -81,8 +90,8 @@ export function calculateSettlements(people, expenses, settlementPayments = []) 
     transactions.push({ from: debtor.id, to: creditor.id, amountEUR });
     creditor.amount -= amountEUR;
     debtor.amount -= amountEUR;
-    if (creditor.amount < 0.005) creditorIndex += 1;
-    if (debtor.amount < 0.005) debtorIndex += 1;
+    if (creditor.amount < thresholdEUR) creditorIndex += 1;
+    if (debtor.amount < thresholdEUR) debtorIndex += 1;
   }
 
   return { balances, transactions };

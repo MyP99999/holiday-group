@@ -9,9 +9,33 @@ import {
   resolveSettlementPaymentAmountEUR,
   toLocalDateTimeInput,
 } from "./settlementPayments";
-import { calculateSettlements } from "../utils";
+import { calculateSettlements, isBalanceSettled, settlementThresholdEUR } from "../utils";
 
 describe("settlement payment confirmation", () => {
+  test("treats balance differences below one Romanian leu as settled", () => {
+    const thresholdEUR = settlementThresholdEUR();
+    expect(isBalanceSettled(thresholdEUR - 0.0001)).toBe(true);
+    expect(isBalanceSettled(-(thresholdEUR - 0.0001))).toBe(true);
+    expect(isBalanceSettled(thresholdEUR)).toBe(false);
+
+    const people = [{ id: "payer" }, { id: "guest" }];
+    const tinyDifference = [{
+      amount: thresholdEUR * 1.8,
+      currency: "EUR",
+      paidById: "payer",
+      participantIds: ["payer", "guest"],
+    }];
+    const payableDifference = [{
+      ...tinyDifference[0],
+      amount: thresholdEUR * 2.2,
+    }];
+
+    expect(calculateSettlements(people, tinyDifference).transactions).toEqual([]);
+    expect(calculateSettlements(people, payableDifference).transactions).toEqual([
+      expect.objectContaining({ from: "guest", to: "payer" }),
+    ]);
+  });
+
   test("allows a member to confirm only their own outgoing payment", () => {
     const transaction = { from: "debtor", to: "creditor", amountEUR: 100 };
     expect(canConfirmSettlementPayment(transaction, "debtor", false)).toBe(true);

@@ -4,7 +4,7 @@ import PageHeader from "../components/PageHeader";
 import CurrencySelect from "../components/CurrencySelect";
 import PersonAvatar from "../components/PersonAvatar";
 import { useApp } from "../context/AppContext";
-import { calculateSettlements, convert, fmt } from "../utils";
+import { calculateSettlements, convert, fmt, isBalanceSettled } from "../utils";
 import { createId } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
@@ -298,7 +298,9 @@ export default function SettlePage() {
             <div className="panel-heading"><div><h2>{t("group_balances")}</h2><p>{t("balance_help")}</p></div></div>
             <div className="balance-ledger">
               {people.map((person, index) => {
-                const balance = convert(balances[String(person.id)] || 0, "EUR", currency);
+                const balanceEUR = balances[String(person.id)] || 0;
+                const balance = convert(balanceEUR, "EUR", currency);
+                const isSettled = isBalanceSettled(balanceEUR);
                 const claimed = isMemberClaimed(person);
                 const canModeratePerson = canModerateMembers && String(person.id) !== String(currentMemberId);
                 return (
@@ -307,7 +309,7 @@ export default function SettlePage() {
                       <PersonAvatar person={person} people={people} index={index} />
                       <span><strong>{person.name}</strong>{person.isBanned ? <small>{t("banned_identity")}</small> : !claimed ? <small>{t("unclaimed_identity")}</small> : null}</span>
                     </div>
-                    <span className={balance > 0.01 ? "money-positive" : balance < -0.01 ? "money-negative" : "money-muted"}>{balance > 0.01 ? `${t("gets_back")} ${fmt(balance, currency)}` : balance < -0.01 ? `${t("owes")} ${fmt(Math.abs(balance), currency)}` : t("settled")}</span>
+                    <span className={isSettled ? "money-muted" : balance > 0 ? "money-positive" : "money-negative"}>{isSettled ? t("settled") : balance > 0 ? `${t("gets_back")} ${fmt(balance, currency)}` : `${t("owes")} ${fmt(Math.abs(balance), currency)}`}</span>
                     {canModeratePerson && (
                       <div className="balance-admin-actions">
                         {person.isBanned ? (

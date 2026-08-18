@@ -4,6 +4,7 @@ describe("expense form", () => {
   test("loads a custom expense into editable string values", () => {
     expect(expenseToForm({
       description: "Villa",
+      details: "Paid at check-in",
       amount: 120,
       currency: "RON",
       paidById: 1,
@@ -11,6 +12,7 @@ describe("expense form", () => {
       shares: { 1: 20, 2: 100 },
     })).toEqual({
       description: "Villa",
+      details: "Paid at check-in",
       amount: "120",
       currency: "RON",
       paidById: "1",
@@ -27,6 +29,7 @@ describe("expense form", () => {
   test("normalizes a valid equal split", () => {
     expect(validateExpenseForm({
       description: "  Taxi  ",
+      details: "  Airport transfer  ",
       amount: "30",
       currency: "EUR",
       paidById: "payer",
@@ -35,6 +38,7 @@ describe("expense form", () => {
     })).toEqual({
       value: {
         description: "Taxi",
+        details: "Airport transfer",
         amount: 30,
         currency: "EUR",
         paidById: "payer",

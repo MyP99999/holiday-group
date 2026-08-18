@@ -3,6 +3,7 @@ import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
 import { createId } from "../storage/tripState";
 import PersonAvatar from "./PersonAvatar";
+import { chronologicalChatMessages } from "../utils/chatMessages";
 
 export function chatDayKey(value) {
   const date = new Date(value);
@@ -23,16 +24,17 @@ export function previousChatStart(currentStart, pageSize = CHAT_PAGE_SIZE) {
 export default function ChatPanel() {
   const { t, locale } = useLanguage();
   const { people, chatMessages, setChatMessages, currentMemberId } = useApp();
+  const orderedMessages = useMemo(() => chronologicalChatMessages(chatMessages), [chatMessages]);
   const [senderId, setSenderId] = useState(() => String(currentMemberId || people[0]?.id || ""));
   const [message, setMessage] = useState("");
-  const [visibleStart, setVisibleStart] = useState(() => initialChatStart(chatMessages.length));
+  const [visibleStart, setVisibleStart] = useState(() => initialChatStart(orderedMessages.length));
   const streamRef = useRef(null);
   const prependMetricsRef = useRef(null);
   const loadingOlderRef = useRef(false);
   const stickToBottomRef = useRef(true);
   const scrollToBottomRef = useRef(true);
-  const previousMessageCountRef = useRef(chatMessages.length);
-  const visibleMessages = useMemo(() => chatMessages.slice(visibleStart), [chatMessages, visibleStart]);
+  const previousMessageCountRef = useRef(orderedMessages.length);
+  const visibleMessages = useMemo(() => orderedMessages.slice(visibleStart), [orderedMessages, visibleStart]);
 
   const loadOlderMessages = useCallback(() => {
     if (loadingOlderRef.current) return;
@@ -68,7 +70,7 @@ export default function ChatPanel() {
 
   useLayoutEffect(() => {
     const previousCount = previousMessageCountRef.current;
-    const messageCount = chatMessages.length;
+    const messageCount = orderedMessages.length;
     previousMessageCountRef.current = messageCount;
 
     if (messageCount > previousCount && stickToBottomRef.current) {
@@ -90,7 +92,7 @@ export default function ChatPanel() {
         scrollToBottomRef.current = false;
       }
     }
-  }, [chatMessages.length, visibleStart]);
+  }, [orderedMessages.length, visibleStart]);
 
   const handleChatScroll = () => {
     const stream = streamRef.current;
@@ -104,12 +106,12 @@ export default function ChatPanel() {
     const authorId = currentMemberId || senderId || people[0]?.id;
     if (!text || !authorId) return;
     stickToBottomRef.current = true;
-    setChatMessages((current) => [...current, {
+    setChatMessages((current) => chronologicalChatMessages([...current, {
       id: createId("message"),
       authorId,
       text,
       createdAt: new Date().toISOString(),
-    }]);
+    }]));
     setMessage("");
   };
 
@@ -121,8 +123,8 @@ export default function ChatPanel() {
 
       <div ref={streamRef} className="chat-stream" role="log" aria-live="polite" onScroll={handleChatScroll}>
         {visibleStart > 0 && <div className="chat-history-hint">{t("scroll_for_older_messages")}</div>}
-        {visibleStart === 0 && chatMessages.length > CHAT_PAGE_SIZE && <div className="chat-history-hint">{t("start_of_conversation")}</div>}
-        {chatMessages.length ? visibleMessages.map((item, messageIndex) => {
+        {visibleStart === 0 && orderedMessages.length > CHAT_PAGE_SIZE && <div className="chat-history-hint">{t("start_of_conversation")}</div>}
+        {orderedMessages.length ? visibleMessages.map((item, messageIndex) => {
           const authorIndex = people.findIndex((person) => String(person.id) === String(item.authorId));
           const author = people[authorIndex];
           const sentAt = new Date(item.createdAt);

@@ -42,7 +42,7 @@ test("renders 15 recent messages and reveals 15 more when scrolled to the top", 
     id: `message-${index + 1}`,
     authorId: "person-1",
     text: `Message ${index + 1}`,
-    createdAt: `2026-08-11T${String(index % 24).padStart(2, "0")}:00:00.000Z`,
+    createdAt: new Date(Date.UTC(2026, 7, 11, 0, index)).toISOString(),
   }));
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -62,6 +62,26 @@ test("renders 15 recent messages and reveals 15 more when scrolled to the top", 
 
   expect(container.querySelectorAll(".chat-message")).toHaveLength(30);
   expect(container.querySelector(".chat-message span")?.textContent).toBe("Message 11");
+
+  act(() => root.unmount());
+  container.remove();
+  mockChatMessages = [];
+});
+
+test("renders shuffled messages in chronological order", () => {
+  mockChatMessages = [
+    { id: "third", authorId: "person-1", text: "Third", createdAt: "2026-08-11T12:00:00.000Z" },
+    { id: "first", authorId: "person-1", text: "First", createdAt: "2026-08-11T08:00:00.000Z" },
+    { id: "second", authorId: "person-1", text: "Second", createdAt: "2026-08-11T10:00:00.000Z" },
+  ];
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+
+  act(() => root.render(<ChatPanel />));
+
+  expect([...container.querySelectorAll(".chat-message span")].map((element) => element.textContent))
+    .toEqual(["First", "Second", "Third"]);
 
   act(() => root.unmount());
   container.remove();

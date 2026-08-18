@@ -28,15 +28,17 @@ describe("member payment details", () => {
 
   it("adds defaults for logistics payers, custom costs and payment history", () => {
     const state = normalizeTripState({
+      expenses: [{ id: "expense" }],
       accommodations: [{ id: "stay", rooms: [] }],
       vehicles: [{ id: "car" }],
       flights: [{ id: "flight" }],
+      otherCosts: [{ id: "other" }],
     });
 
     expect(state.accommodations[0].paidById).toBe("");
     expect(state.vehicles[0].rentalPaidById).toBe("");
     expect(state.flights[0].paidById).toBe("");
-    expect(state.otherCosts).toEqual([]);
+    expect([state.expenses[0].details, state.accommodations[0].details, state.vehicles[0].details, state.flights[0].details, state.otherCosts[0].details]).toEqual(["", "", "", "", ""]);
     expect(state.logisticsPayments).toEqual([]);
   });
 });

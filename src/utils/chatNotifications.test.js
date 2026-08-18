@@ -16,9 +16,18 @@ describe("chat notifications", () => {
     expect(unreadMessages(messages, "", "alice").map((message) => message.id)).toEqual(["m2", "m4"]);
   });
 
+  test("uses chronological order when the stored array is shuffled", () => {
+    const shuffled = [
+      { id: "m3", authorId: "bob", createdAt: "2026-08-11T12:00:00.000Z" },
+      { id: "m1", authorId: "bob", createdAt: "2026-08-11T08:00:00.000Z" },
+      { id: "m2", authorId: "alice", createdAt: "2026-08-11T10:00:00.000Z" },
+    ];
+
+    expect(unreadMessages(shuffled, "m2", "alice").map((message) => message.id)).toEqual(["m3"]);
+  });
+
   test("shows 9+ for double-digit unread counts", () => {
     expect(unreadBadge(9)).toBe("9");
     expect(unreadBadge(10)).toBe("9+");
   });
 });
-

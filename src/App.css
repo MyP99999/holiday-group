@@ -504,6 +504,7 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .expense-primary strong, .expense-primary small, .amount-cell strong, .amount-cell small { display: block; }
 .expense-primary strong { font-size: 13px; }
 .expense-primary small, .amount-cell small { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.expense-primary .expense-details { line-height: 1.45; white-space: pre-wrap; }
 .payer-cell { display: flex; align-items: center; gap: 8px; }
 .amount-cell { text-align: right; }
 .amount-cell strong { font-size: 13px; }
@@ -515,6 +516,7 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .expense-edit-heading > b { white-space: nowrap; color: var(--ink); font: 400 23px var(--serif); }
 .expense-edit-impact { margin: 18px 0 0 !important; padding: 11px 13px; color: #4d7259 !important; background: var(--sage-wash); border-left: 3px solid var(--sage); border-radius: 0 8px 8px 0; }
 .form-stack { display: flex; flex-direction: column; gap: 15px; }
+.form-stack textarea { min-height: 82px; }
 .field-group { display: flex; flex-direction: column; gap: 6px; }
 .field-label { color: var(--ink); font-size: 11px; font-weight: 700; }
 .amount-grid { display: grid; grid-template-columns: 1fr 125px; gap: 10px; }
@@ -793,6 +795,7 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .creator-panel { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
 .creator-panel .field-group { flex: 1 1 125px; }
 .creator-panel .field-group:nth-child(1), .creator-panel .field-group:nth-child(2) { flex-basis: 220px; }
+.creator-panel .creator-description { flex-basis: 100%; }
 .creator-panel .text-link { min-height: 44px; padding-inline: 8px; }
 .logistics-section { padding-top: 4px; }
 .logistics-section + .logistics-section { margin-top: 42px; }
@@ -807,6 +810,7 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .stay-heading p { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
 .stay-heading > div:last-child { display: flex; align-items: center; gap: 18px; }
 .stay-heading > div:last-child > strong { font: 400 18px var(--serif); }
+.item-description { margin: 0; padding: 13px 24px; color: var(--muted); background: #fff; border-bottom: 1px solid var(--line-soft); font-size: 11px; line-height: 1.6; white-space: pre-wrap; }
 .stay-cost-controls { padding: 18px 24px; display: grid; grid-template-columns: minmax(220px, .9fr) minmax(170px, .55fr) minmax(300px, 1.2fr); gap: 18px; align-items: end; border-bottom: 1px solid var(--line-soft); background: #fbfaf8; }
 .stay-cost-controls.logistics-financial-summary { grid-template-columns: repeat(3, minmax(130px, 1fr)) auto; }
 .logistics-financial-summary > div > span, .logistics-financial-summary > div > strong { display: block; }
@@ -862,18 +866,23 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .open-empty strong { font: 400 25px var(--serif); }
 .open-empty span { max-width: 420px; margin: 8px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .car-creator { padding: 16px 0; display: grid; grid-template-columns: minmax(180px, 1fr) 100px auto auto; gap: 10px; align-items: end; border-bottom: 1px solid var(--line); }
-.car-creator input { min-height: 39px; font-size: 11px; }
+.car-creator input, .car-creator textarea { min-height: 39px; font-size: 11px; }
+.car-creator textarea { min-height: 72px; }
+.car-creator .creator-description { grid-column: 1 / -1; }
 .section-heading-actions { display: flex; align-items: flex-end; gap: 18px; }
 .section-heading-actions > strong { text-align: right; white-space: nowrap; font: 400 22px var(--serif); }
 .section-heading-actions > strong span { display: block; margin-top: 4px; color: var(--muted); font: 600 8px var(--sans); text-transform: uppercase; letter-spacing: .08em; }
 .vehicle-block { padding: 0 24px 18px; }
+.vehicle-block > .item-description { margin-inline: -24px; }
 .vehicle-block > header { min-height: 80px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
 .vehicle-block > header h3 + span { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
 .vehicle-grid { min-height: 92px; display: grid; grid-template-columns: 190px minmax(0, 1fr) auto; gap: 22px; align-items: center; }
 .vehicle-grid select { min-height: 40px; font-size: 11px; }
 .flight-creator { padding: 16px 0; display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; align-items: end; border-bottom: 1px solid var(--line); }
 .flight-creator label > span, .flight-details-grid label > span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
-.flight-creator input, .flight-creator select, .flight-details-grid input, .flight-details-grid select { min-height: 39px; font-size: 11px; }
+.flight-creator input, .flight-creator select, .flight-creator textarea, .flight-details-grid input, .flight-details-grid select, .flight-details-grid textarea { min-height: 39px; font-size: 11px; }
+.flight-creator textarea, .flight-details-grid textarea { min-height: 72px; }
+.flight-creator .creator-description, .flight-details-grid .full-width-field { grid-column: 1 / -1; }
 .flight-heading { min-height: 94px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(110deg, #f7f4ef, #eef3f0); border-bottom: 1px solid var(--line); }
 .flight-heading > div:first-child > span { color: var(--accent); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; }
 .flight-heading h3 { margin-top: 5px; }
@@ -911,7 +920,9 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .logistics-edit-dialog { width: min(100%, 620px); }
 .logistics-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .logistics-edit-grid label > span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-.logistics-edit-grid input, .logistics-edit-grid select { width: 100%; min-height: 42px; }
+.logistics-edit-grid input, .logistics-edit-grid select, .logistics-edit-grid textarea { width: 100%; min-height: 42px; }
+.logistics-edit-grid textarea { min-height: 78px; }
+.logistics-edit-grid .full-width-field { grid-column: 1 / -1; }
 .logistics-edit-grid label > small { display: block; margin-top: 5px; color: var(--muted); font-size: 8px; line-height: 1.4; }
 .edit-balance-warning { margin: 16px 0 0 !important; padding: 11px 13px; color: #4d7259 !important; background: var(--sage-wash); border-left: 3px solid var(--sage); }
 .rental-participation { padding-inline: 15px; grid-template-columns: 180px minmax(0, 1fr); }
@@ -924,7 +935,9 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .allocation-summary header > strong { font: 400 27px var(--serif); }
 .other-cost-creator { padding: 16px 0; display: grid; grid-template-columns: minmax(180px, 1.2fr) minmax(110px, .55fr) 110px minmax(150px, .7fr) auto auto; gap: 10px; align-items: end; border-bottom: 1px solid var(--line); }
 .other-cost-creator label > span, .other-cost-grid label > span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
-.other-cost-creator input, .other-cost-creator select, .other-cost-grid input, .other-cost-grid select { min-height: 40px; font-size: 11px; }
+.other-cost-creator input, .other-cost-creator select, .other-cost-creator textarea, .other-cost-grid input, .other-cost-grid select, .other-cost-grid textarea { min-height: 40px; font-size: 11px; }
+.other-cost-creator textarea, .other-cost-grid textarea { min-height: 72px; }
+.other-cost-creator .creator-description, .other-cost-grid .full-width-field { grid-column: 1 / -1; }
 .other-cost-block { margin-top: 18px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 .other-cost-block > header { min-height: 70px; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 18px; background: #fbfaf8; border-bottom: 1px solid var(--line-soft); }
 .other-cost-block > header span { color: var(--sage); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em; }
@@ -1517,6 +1530,7 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
   .car-creator > .button { grid-column: 1 / -1; }
   .section-heading-actions { flex-direction: column; align-items: flex-end; gap: 10px; }
   .vehicle-block { padding: 0 16px 14px; }
+  .vehicle-block > .item-description { margin-inline: -16px; }
   .vehicle-grid { padding: 16px 0; grid-template-columns: 1fr; gap: 14px; }
   .flight-creator { grid-template-columns: 1fr 1fr; }
   .flight-creator > .button { grid-column: 1 / -1; }

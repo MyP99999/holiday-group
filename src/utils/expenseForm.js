@@ -5,6 +5,7 @@ export function expenseToForm(expense = {}) {
 
   return {
     description: String(expense.description || ""),
+    details: String(expense.details || ""),
     amount: expense.amount === undefined || expense.amount === null ? "" : String(expense.amount),
     currency: expense.currency || "EUR",
     paidById: expense.paidById === undefined || expense.paidById === null ? "" : String(expense.paidById),
@@ -42,6 +43,7 @@ export function validateExpenseForm(form = {}) {
   return {
     value: {
       description: String(form.description).trim(),
+      details: String(form.details || "").trim(),
       amount,
       currency: form.currency || "EUR",
       paidById: String(form.paidById),

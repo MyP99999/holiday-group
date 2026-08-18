@@ -34,9 +34,9 @@ function buttonWithText(container, text) {
   return [...container.querySelectorAll("button")].find((button) => button.textContent.trim() === text);
 }
 
-function inputWithLabel(container, text) {
+function controlWithLabel(container, text) {
   const label = [...container.querySelectorAll("label")].find((item) => item.textContent.trim().startsWith(text));
-  return label?.querySelector("input");
+  return label?.querySelector("input, textarea");
 }
 
 test("edits a ledger expense while preserving its source metadata and id", () => {
@@ -83,8 +83,9 @@ test("edits a ledger expense while preserving its source metadata and id", () =>
   click(buttonWithText(container, "Edit"));
   const dialog = container.querySelector('[role="dialog"]');
   expect(dialog?.querySelector("h2")?.textContent).toBe("Edit expense");
-  changeInput(inputWithLabel(dialog, "Description"), "Dinner at Lido");
-  changeInput(inputWithLabel(dialog, "Amount"), "96");
+  changeInput(controlWithLabel(dialog, "Title"), "Dinner at Lido");
+  changeInput(controlWithLabel(dialog, "Description"), "Birthday meal by the water");
+  changeInput(controlWithLabel(dialog, "Amount"), "96");
   click(buttonWithText(dialog, "Save changes"));
 
   expect(updateTripState).toHaveBeenCalledTimes(1);
@@ -92,6 +93,7 @@ test("edits a ledger expense while preserving its source metadata and id", () =>
     expect.objectContaining({
       id: "expense-1",
       description: "Dinner at Lido",
+      details: "Birthday meal by the water",
       amount: 96,
       source: "scan",
       receiptName: "Lido receipt",

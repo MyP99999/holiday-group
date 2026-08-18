@@ -13,12 +13,15 @@ describe("logistics costs", () => {
 
   test("builds expenses for each priced logistics category", () => {
     const result = buildLogisticsExpenses({
-      accommodations: [{ id: "stay", name: "Villa", price: 200, currency: "EUR", paidById: "a", splitMode: "people", participantIds: ["a", "b"], rooms: [] }],
-      vehicles: [{ id: "car", name: "Rental", rentalEnabled: true, rentalPrice: 90, rentalCurrency: "EUR", rentalPaidById: "b", rentalParticipantIds: ["a", "b"] }],
-      flights: [{ id: "flight", from: "OTP", to: "BCN", price: 120, currency: "EUR", paidById: "a", participantIds: ["a"] }],
-      otherCosts: [{ id: "food", title: "Food", amount: 60, currency: "EUR", paidById: "b", participantIds: ["a", "b"] }],
+      accommodations: [{ id: "stay", name: "Villa", details: "Breakfast included", price: 200, currency: "EUR", paidById: "a", splitMode: "people", participantIds: ["a", "b"], rooms: [] }],
+      vehicles: [{ id: "car", name: "Rental", details: "Collect at terminal", rentalEnabled: true, rentalPrice: 90, rentalCurrency: "EUR", rentalPaidById: "b", rentalParticipantIds: ["a", "b"] }],
+      flights: [{ id: "flight", from: "OTP", to: "BCN", details: "One checked bag", price: 120, currency: "EUR", paidById: "a", participantIds: ["a"] }],
+      otherCosts: [{ id: "food", title: "Food", details: "Welcome groceries", amount: 60, currency: "EUR", paidById: "b", participantIds: ["a", "b"] }],
     });
     expect(result.map((item) => item.logisticsType)).toEqual(["accommodation", "rental", "flight", "other"]);
+    expect(result.map((item) => item.details)).toEqual([
+      "Breakfast included", "Collect at terminal", "One checked bag", "Welcome groceries",
+    ]);
   });
 
   test("subtracts a linked advance from what a person still owes", () => {

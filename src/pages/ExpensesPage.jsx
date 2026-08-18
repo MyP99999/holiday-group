@@ -17,6 +17,7 @@ import { getTripExpenses } from "../utils/tripFinancials";
 
 const emptyForm = {
   description: "",
+  details: "",
   amount: "",
   currency: "EUR",
   paidById: "",
@@ -173,6 +174,7 @@ export default function ExpensesPage() {
 
     const fields = changedActivityFields(expenseToEdit, result.value, {
       description: "description",
+      details: "description",
       amount: "amount",
       currency: "currency",
       paidById: "payer",
@@ -228,7 +230,7 @@ export default function ExpensesPage() {
                 const shares = getExpenseShares(expense);
                 return (
                   <div className="expense-table-row" role="row" key={expense.id}>
-                    <span className="expense-primary"><strong>{expense.description}</strong><small>{expenseSourceLabel(expense)}{expense.editedAt ? ` · ${t("edited")}` : ""}</small></span>
+                    <span className="expense-primary"><strong>{expense.description}</strong>{expense.details && <small className="expense-details">{expense.details}</small>}<small>{expenseSourceLabel(expense)}{expense.editedAt ? ` · ${t("edited")}` : ""}</small></span>
                     <span className="payer-cell"><PersonAvatar person={payer} people={people} index={payerIndex} size="small" />{personName(expense.paidById)}</span>
                     <span>{expense.shares ? t("custom_split") : t(shares.length === 1 ? "person_count" : "people_count", { count: shares.length })}</span>
                     <span>{expense.date ? new Date(expense.date).toLocaleDateString(locale, { day: "2-digit", month: "short" }) : "—"}</span>
@@ -261,7 +263,8 @@ export default function ExpensesPage() {
             <div className="empty-copy compact-empty"><h3>{t("add_people_first")}</h3><p>{t("group_needs_names")}</p><button className="button secondary" onClick={() => navigate("../people")}>{t("overview")}</button></div>
           ) : (
             <div className="form-stack">
-              <label className="field-group"><span className="field-label">{t("description")}</span><input value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder={t("what_for")} /></label>
+              <label className="field-group"><span className="field-label">{t("title")}</span><input value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder={t("what_for")} /></label>
+              <label className="field-group"><span className="field-label">{t("description_optional")}</span><textarea value={form.details} onChange={(event) => setForm((current) => ({ ...current, details: event.target.value }))} placeholder={t("description_placeholder")} /></label>
               <div className="amount-grid">
                 <label className="field-group"><span className="field-label">{t("amount")}</span><input type="number" min="0" step="0.01" value={form.amount} onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))} placeholder="0.00" /></label>
                 <label className="field-group"><span className="field-label">{t("currency")}</span><CurrencySelect value={form.currency} onChange={(currency) => setForm((current) => ({ ...current, currency }))} /></label>
@@ -301,7 +304,8 @@ export default function ExpensesPage() {
             </div>
             <p id="edit-expense-description">{t("edit_expense_desc")}</p>
             <div className="form-stack">
-              <label className="field-group"><span className="field-label">{t("description")}</span><input autoFocus value={editForm.description} onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))} placeholder={t("what_for")} /></label>
+              <label className="field-group"><span className="field-label">{t("title")}</span><input autoFocus value={editForm.description} onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))} placeholder={t("what_for")} /></label>
+              <label className="field-group"><span className="field-label">{t("description_optional")}</span><textarea value={editForm.details} onChange={(event) => setEditForm((current) => ({ ...current, details: event.target.value }))} placeholder={t("description_placeholder")} /></label>
               <div className="amount-grid">
                 <label className="field-group"><span className="field-label">{t("amount")}</span><input type="number" min="0.01" step="0.01" value={editForm.amount} onChange={(event) => setEditForm((current) => ({ ...current, amount: event.target.value }))} placeholder="0.00" /></label>
                 <label className="field-group"><span className="field-label">{t("currency")}</span><CurrencySelect value={editForm.currency} onChange={(currency) => setEditForm((current) => ({ ...current, currency }))} /></label>

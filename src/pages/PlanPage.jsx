@@ -20,14 +20,14 @@ import {
   uniqueIds,
 } from "../utils/logisticsCosts";
 
-const emptyStay = { name: "", location: "", nights: 1, price: "", currency: "EUR", paidById: "", splitMode: "people" };
-const emptyCar = { name: "", seats: 5 };
+const emptyStay = { name: "", location: "", details: "", nights: 1, price: "", currency: "EUR", paidById: "", splitMode: "people" };
+const emptyCar = { name: "", details: "", seats: 5 };
 const emptyFlight = {
   airline: "", flightNumber: "", from: "", to: "",
   departureDate: "", departureTime: "", arrivalDate: "", arrivalTime: "",
-  price: "", currency: "EUR", paidById: "",
+  details: "", price: "", currency: "EUR", paidById: "",
 };
-const emptyOtherCost = { title: "", amount: "", currency: "EUR", paidById: "" };
+const emptyOtherCost = { title: "", details: "", amount: "", currency: "EUR", paidById: "" };
 
 function CommentThread({ targetType, targetId }) {
   const { t, locale } = useLanguage();
@@ -237,6 +237,7 @@ export default function PlanPage() {
       id: createId("stay"),
       name: stayForm.name.trim(),
       location: stayForm.location.trim(),
+      details: stayForm.details.trim(),
       nights: Math.max(1, Number(stayForm.nights) || 1),
       price: Number(stayForm.price) || 0,
       currency: stayForm.currency,
@@ -258,6 +259,7 @@ export default function PlanPage() {
     id: stay.id,
     name: stay.name || "",
     location: stay.location || "",
+    details: stay.details || "",
     nights: stay.nights || 1,
     price: stay.price ?? "",
     currency: stay.currency || "EUR",
@@ -273,6 +275,7 @@ export default function PlanPage() {
       ...stay,
       name: stayEdit.name.trim(),
       location: stayEdit.location.trim(),
+      details: stayEdit.details.trim(),
       nights: Math.max(1, Math.trunc(Number(stayEdit.nights) || 1)),
       price: Math.max(0, Number(stayEdit.price) || 0),
       currency: stayEdit.currency,
@@ -280,7 +283,7 @@ export default function PlanPage() {
       splitMode: stayEdit.splitMode,
     };
     const fields = changedActivityFields(stay, nextStay, {
-      name: "name", location: "location", nights: "nights", price: "amount",
+      name: "name", location: "location", details: "description", nights: "nights", price: "amount",
       currency: "currency", paidById: "payer", splitMode: "split",
     });
     if (!fields.length) {
@@ -347,6 +350,7 @@ export default function PlanPage() {
     setVehicles((current) => [...current, {
       id: createId("vehicle"),
       name: carForm.name.trim(),
+      details: carForm.details.trim(),
       seats: normalizeVehicleSeats(carForm.seats),
       driverId: "",
       passengerIds: [],
@@ -364,6 +368,7 @@ export default function PlanPage() {
   const openCarEditor = (vehicle) => setCarEdit({
     id: vehicle.id,
     name: vehicle.name || "",
+    details: vehicle.details || "",
     seats: vehicle.seats || 1,
     rentalPrice: vehicle.rentalPrice ?? "",
     rentalCurrency: vehicle.rentalCurrency || "EUR",
@@ -378,6 +383,7 @@ export default function PlanPage() {
     const nextVehicle = {
       ...vehicle,
       name: carEdit.name.trim(),
+      details: carEdit.details.trim(),
       seats: normalizeVehicleSeats(carEdit.seats, occupiedSeats),
       ...(vehicle.rentalEnabled ? {
         rentalPrice: Math.max(0, Number(carEdit.rentalPrice) || 0),
@@ -386,7 +392,7 @@ export default function PlanPage() {
       } : {}),
     };
     const fields = changedActivityFields(vehicle, nextVehicle, {
-      name: "name", seats: "seats", rentalPrice: "amount",
+      name: "name", details: "description", seats: "seats", rentalPrice: "amount",
       rentalCurrency: "currency", rentalPaidById: "payer",
     });
     if (!fields.length) {
@@ -450,6 +456,7 @@ export default function PlanPage() {
       to: flightForm.to.trim().toUpperCase(),
       airline: flightForm.airline.trim(),
       flightNumber: flightForm.flightNumber.trim().toUpperCase(),
+      details: flightForm.details.trim(),
       price: Number(flightForm.price) || 0,
       paidById: flightForm.paidById || defaultPayerId,
       participantIds: [],
@@ -479,6 +486,7 @@ export default function PlanPage() {
     setOtherCosts((current) => [...current, {
       id: createId("other-cost"),
       title: otherForm.title.trim(),
+      details: otherForm.details.trim(),
       amount: Number(otherForm.amount),
       currency: otherForm.currency,
       paidById: otherForm.paidById || defaultPayerId,
@@ -595,6 +603,7 @@ export default function PlanPage() {
           <label className="field-group"><span className="field-label">{t("currency")}</span><CurrencySelect value={stayForm.currency} onChange={(currency) => setStayForm((current) => ({ ...current, currency }))} /></label>
           <label className="field-group"><span className="field-label">{t("payer")}</span><select value={stayForm.paidById} onChange={(event) => setStayForm((current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
           <label className="field-group"><span className="field-label">{t("split_method")}</span><select value={stayForm.splitMode} onChange={(event) => setStayForm((current) => ({ ...current, splitMode: event.target.value }))}><option value="people">{t("split_by_people")}</option><option value="rooms">{t("split_by_rooms")}</option></select></label>
+          <label className="field-group creator-description"><span className="field-label">{t("description_optional")}</span><textarea value={stayForm.details} onChange={(event) => setStayForm((current) => ({ ...current, details: event.target.value }))} placeholder={t("description_placeholder")} /></label>
           <button className="button primary" onClick={createStay}>{t("create_stay")}</button>
           <button className="text-link" onClick={() => setShowStayForm(false)}>{t("cancel")}</button>
         </section>
@@ -665,6 +674,7 @@ export default function PlanPage() {
                     <div><h3>{stay.name}</h3><p>{stay.location || "—"} · {stay.nights} {t("nights").toLowerCase()}</p></div>
                     <div><strong>{fmt(stayTotal, stay.currency)}</strong><button className="decision-link" onClick={() => startDecision("accommodation", t("choose_accommodation_vote"), { title: stay.name, detail: [stay.location, `${stay.nights} ${t("nights").toLowerCase()}`].filter(Boolean).join(" · "), price: stay.price, currency: stay.currency })}>{t("vote_on_this")}</button><button className="row-action" onClick={() => openStayEditor(stay)}>{t("edit")}</button><button className="row-action" onClick={() => setAccommodations((current) => current.filter((item) => item.id !== stay.id))}>{t("remove")}</button></div>
                   </header>
+                  {stay.details && <p className="item-description">{stay.details}</p>}
 
                   <div className="stay-cost-controls logistics-financial-summary">
                     <div><span className="field-label">{t("stay_price")}</span><strong>{fmt(stayTotal, stay.currency)}</strong></div>
@@ -722,6 +732,7 @@ export default function PlanPage() {
               <div className="car-creator">
                 <label><span>{t("car_name")}</span><input autoFocus value={carForm.name} onChange={(event) => setCarForm((current) => ({ ...current, name: event.target.value }))} placeholder="Fiat 500X" /></label>
                 <label><span>{t("seats")}</span><input type="number" min="1" max="60" value={carForm.seats} onChange={(event) => setCarForm((current) => ({ ...current, seats: event.target.value }))} /></label>
+                <label className="creator-description"><span>{t("description_optional")}</span><textarea value={carForm.details} onChange={(event) => setCarForm((current) => ({ ...current, details: event.target.value }))} placeholder={t("description_placeholder")} /></label>
                 <button className="button primary small-button" onClick={createCar}>{t("create_car")}</button>
                 <button className="text-link" onClick={() => setShowCarForm(false)}>{t("cancel")}</button>
               </div>
@@ -732,6 +743,7 @@ export default function PlanPage() {
               return (
                 <article className="vehicle-block" key={vehicle.id}>
                   <header><div><h3>{vehicle.name}</h3><span>{vehicle.seats} {t("seats").toLowerCase()}</span></div><div className="logistics-item-actions"><button className="row-action" onClick={() => openCarEditor(vehicle)}>{t("edit")}</button><button className="row-action" onClick={() => setVehicles((current) => current.filter((item) => item.id !== vehicle.id))}>{t("remove")}</button></div></header>
+                  {vehicle.details && <p className="item-description">{vehicle.details}</p>}
                   <div className="vehicle-grid">
                     <label><span>{t("driver")}</span><select value={vehicle.driverId} onChange={(event) => setDriver(vehicle.id, event.target.value)}><option value="">{t("choose_driver")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
                     <div className="passenger-control"><span>{t("passengers")}</span><div>{people.filter((person) => String(person.id) !== String(vehicle.driverId)).map((person) => <button className={vehicle.passengerIds.map(String).includes(String(person.id)) ? "selected" : ""} key={person.id} onClick={() => togglePassenger(vehicle.id, person.id)}>{person.name}</button>)}</div></div>
@@ -783,6 +795,7 @@ export default function PlanPage() {
                 <label><span>{t("departure")}</span><input type="date" value={flightForm.departureDate} onChange={(event) => setFlightForm((current) => ({ ...current, departureDate: event.target.value }))} /></label>
                 <label><span>{t("total_fare")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={flightForm.price} onChange={(event) => setFlightForm((current) => ({ ...current, price: event.target.value }))} placeholder="0.00" /><CurrencySelect value={flightForm.currency} onChange={(currency) => setFlightForm((current) => ({ ...current, currency }))} /></div></label>
                 <label><span>{t("payer")}</span><select value={flightForm.paidById} onChange={(event) => setFlightForm((current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+                <label className="creator-description"><span>{t("description_optional")}</span><textarea value={flightForm.details} onChange={(event) => setFlightForm((current) => ({ ...current, details: event.target.value }))} placeholder={t("description_placeholder")} /></label>
                 <button className="button primary small-button" onClick={createFlight}>{t("create_flight")}</button>
                 <button className="text-link" onClick={() => setShowFlightForm(false)}>{t("cancel")}</button>
               </div>
@@ -796,6 +809,7 @@ export default function PlanPage() {
                     <div><span>{flight.flightNumber || flight.airline || t("flight")}</span><h3>{flight.from} <b>â†’</b> {flight.to}</h3><small>{[flight.airline, flight.departureDate].filter(Boolean).join(" Â· ")}</small></div>
                     <div><strong>{fmt(flight.price, flight.currency)}</strong><button className="decision-link" onClick={() => startDecision("flight", t("choose_flight_vote"), { title: `${flight.from} → ${flight.to}`, detail: [flight.airline, flight.flightNumber, flight.departureDate].filter(Boolean).join(" · "), price: flight.price, currency: flight.currency })}>{t("vote_on_this")}</button><button className="row-action" onClick={() => setFlights((current) => current.filter((item) => item.id !== flight.id))}>{t("remove")}</button></div>
                   </header>
+                  {flight.details && <p className="item-description">{flight.details}</p>}
 
                   <div className="flight-details-grid">
                     <label><span>{t("airline")}</span><input value={flight.airline} onChange={(event) => updateFlight(flight.id, { airline: event.target.value })} /></label>
@@ -804,6 +818,7 @@ export default function PlanPage() {
                     <label><span>{t("arrival")}</span><div className="date-time-fields"><input type="date" value={flight.arrivalDate} onChange={(event) => updateFlight(flight.id, { arrivalDate: event.target.value })} /><input type="time" value={flight.arrivalTime} onChange={(event) => updateFlight(flight.id, { arrivalTime: event.target.value })} /></div></label>
                     <label><span>{t("total_fare")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={flight.price} onChange={(event) => updateFlight(flight.id, { price: event.target.value })} /><CurrencySelect value={flight.currency} onChange={(currency) => updateFlight(flight.id, { currency })} /></div></label>
                     <label><span>{t("payer")}</span><select value={flight.paidById || ""} onChange={(event) => updateFlight(flight.id, { paidById: event.target.value })}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+                    <label className="full-width-field"><span>{t("description_optional")}</span><textarea value={flight.details || ""} onChange={(event) => updateFlight(flight.id, { details: event.target.value })} placeholder={t("description_placeholder")} /></label>
                   </div>
 
                   <div className="participation-block flight-participation">
@@ -832,6 +847,7 @@ export default function PlanPage() {
                 <label><span>{t("amount")}</span><input type="number" min="0" step="0.01" value={otherForm.amount} onChange={(event) => setOtherForm((current) => ({ ...current, amount: event.target.value }))} placeholder="0.00" /></label>
                 <label><span>{t("currency")}</span><CurrencySelect value={otherForm.currency} onChange={(currency) => setOtherForm((current) => ({ ...current, currency }))} /></label>
                 <label><span>{t("payer")}</span><select value={otherForm.paidById} onChange={(event) => setOtherForm((current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+                <label className="creator-description"><span>{t("description_optional")}</span><textarea value={otherForm.details} onChange={(event) => setOtherForm((current) => ({ ...current, details: event.target.value }))} placeholder={t("description_placeholder")} /></label>
                 <button className="button primary small-button" onClick={createOtherCost}>{t("add")}</button>
                 <button className="text-link" onClick={() => setShowOtherForm(false)}>{t("cancel")}</button>
               </div>
@@ -842,6 +858,7 @@ export default function PlanPage() {
               return (
                 <article className="other-cost-block expense-cost-block" key={`expense:${expense.id}`}>
                   <header><div><span>{t("expenses")}</span><h3>{expense.description}</h3></div><button className="row-action" onClick={() => navigate("../expenses")}>{t("edit")}</button></header>
+                  {expense.details && <p className="item-description">{expense.details}</p>}
                   <div className="other-cost-grid expense-cost-grid">
                     <div><span>{t("amount")}</span><strong>{fmt(expense.amount, expense.currency)}</strong></div>
                     <div><span>{t("payer")}</span><strong>{personName(expense.paidById)}</strong></div>
@@ -861,6 +878,7 @@ export default function PlanPage() {
                     <label><span>{t("title")}</span><input value={cost.title} onChange={(event) => updateOtherCost(cost.id, { title: event.target.value })} /></label>
                     <label><span>{t("amount")}</span><div className="price-with-currency"><input type="number" min="0" step="0.01" value={cost.amount} onChange={(event) => updateOtherCost(cost.id, { amount: event.target.value })} /><CurrencySelect value={cost.currency} onChange={(currency) => updateOtherCost(cost.id, { currency })} /></div></label>
                     <label><span>{t("payer")}</span><select value={cost.paidById || ""} onChange={(event) => updateOtherCost(cost.id, { paidById: event.target.value })}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+                    <label className="full-width-field"><span>{t("description_optional")}</span><textarea value={cost.details || ""} onChange={(event) => updateOtherCost(cost.id, { details: event.target.value })} placeholder={t("description_placeholder")} /></label>
                   </div>
                   <div className="participation-block">
                     <div><strong>{t("shared_with")}</strong><span>{t("other_participants_help")}</span></div>
@@ -894,6 +912,7 @@ export default function PlanPage() {
               <label><span>{t("currency")}</span><CurrencySelect value={stayEdit.currency} onChange={(currency) => setStayEdit((current) => ({ ...current, currency }))} /></label>
               <label><span>{t("payer")}</span><select value={stayEdit.paidById} onChange={(event) => setStayEdit((current) => ({ ...current, paidById: event.target.value }))}><option value="">{t("choose_payer")}</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
               <label><span>{t("split_method")}</span><select value={stayEdit.splitMode} onChange={(event) => setStayEdit((current) => ({ ...current, splitMode: event.target.value }))}><option value="people">{t("split_by_people")}</option><option value="rooms">{t("split_by_rooms")}</option></select></label>
+              <label className="full-width-field"><span>{t("description_optional")}</span><textarea value={stayEdit.details} onChange={(event) => setStayEdit((current) => ({ ...current, details: event.target.value }))} placeholder={t("description_placeholder")} /></label>
             </div>
             <p className="edit-balance-warning">{t("edit_logistics_balance_warning")}</p>
             <div className="confirm-actions"><button type="button" className="button secondary" onClick={() => setStayEdit(null)}>{t("cancel")}</button><button type="submit" className="button primary">{t("confirm_changes")}</button></div>
@@ -909,6 +928,7 @@ export default function PlanPage() {
             <div className="logistics-edit-grid">
               <label><span>{t("car_name")}</span><input autoFocus required value={carEdit.name} onChange={(event) => setCarEdit((current) => ({ ...current, name: event.target.value }))} /></label>
               <label><span>{t("seats")}</span><input type="number" min={minimumEditedCarSeats} max="60" required value={carEdit.seats} onChange={(event) => setCarEdit((current) => ({ ...current, seats: event.target.value }))} /><small>{t("seat_limit_help", { minimum: minimumEditedCarSeats })}</small></label>
+              <label className="full-width-field"><span>{t("description_optional")}</span><textarea value={carEdit.details} onChange={(event) => setCarEdit((current) => ({ ...current, details: event.target.value }))} placeholder={t("description_placeholder")} /></label>
               {editedVehicle.rentalEnabled && <>
                 <label><span>{t("rental_price")}</span><input type="number" min="0" step="0.01" required value={carEdit.rentalPrice} onChange={(event) => setCarEdit((current) => ({ ...current, rentalPrice: event.target.value }))} /></label>
                 <label><span>{t("currency")}</span><CurrencySelect value={carEdit.rentalCurrency} onChange={(rentalCurrency) => setCarEdit((current) => ({ ...current, rentalCurrency }))} /></label>

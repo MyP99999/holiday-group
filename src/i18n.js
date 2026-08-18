@@ -1295,6 +1295,27 @@ Object.assign(de, {
   planned_split_desc: "Alle Reisekosten, Zahlungen, Restbetr\u00e4ge und Empf\u00e4nger in der ausgew\u00e4hlten W\u00e4hrung.",
 });
 
+Object.assign(en, {
+  description_optional: "Description \u00b7 optional",
+  description_placeholder: "Add useful context, notes, booking details, or instructions\u2026",
+});
+Object.assign(ro, {
+  description_optional: "Descriere \u00b7 op\u021bional",
+  description_placeholder: "Adaug\u0103 detalii utile, noti\u021be, informa\u021bii despre rezervare sau instruc\u021biuni\u2026",
+});
+Object.assign(es, {
+  description_optional: "Descripci\u00f3n \u00b7 opcional",
+  description_placeholder: "A\u00f1ade contexto, notas, datos de reserva o instrucciones\u2026",
+});
+Object.assign(fr, {
+  description_optional: "Description \u00b7 facultative",
+  description_placeholder: "Ajoutez du contexte, des notes, des informations de r\u00e9servation ou des instructions\u2026",
+});
+Object.assign(de, {
+  description_optional: "Beschreibung \u00b7 optional",
+  description_placeholder: "F\u00fcge Kontext, Notizen, Buchungsdetails oder Anweisungen hinzu\u2026",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

@@ -46,12 +46,13 @@ function getEqualShares(amount, participantIds) {
   return Object.fromEntries(participants.map((id) => [id, total / participants.length]));
 }
 
-function asExpense(type, item, { description, amount, currency, paidById, shares, createdAt }) {
+function asExpense(type, item, { description, details, amount, currency, paidById, shares, createdAt }) {
   return {
     id: `logistics:${type}:${item.id}`,
     logisticsType: type,
     logisticsId: String(item.id),
     description,
+    details: String(details || ""),
     amount: Number(amount) || 0,
     currency: currency || "EUR",
     paidById: String(paidById || ""),
@@ -66,6 +67,7 @@ export function buildLogisticsExpenses({ accommodations = [], vehicles = [], fli
   const items = [
     ...accommodations.map((stay) => asExpense("accommodation", stay, {
       description: stay.name || "Accommodation",
+      details: stay.details,
       amount: stay.price,
       currency: stay.currency,
       paidById: stay.paidById,
@@ -74,6 +76,7 @@ export function buildLogisticsExpenses({ accommodations = [], vehicles = [], fli
     })),
     ...vehicles.filter((vehicle) => vehicle.rentalEnabled).map((vehicle) => asExpense("rental", vehicle, {
       description: vehicle.name || "Car rental",
+      details: vehicle.details,
       amount: vehicle.rentalPrice,
       currency: vehicle.rentalCurrency,
       paidById: vehicle.rentalPaidById,
@@ -82,6 +85,7 @@ export function buildLogisticsExpenses({ accommodations = [], vehicles = [], fli
     })),
     ...flights.map((flight) => asExpense("flight", flight, {
       description: [flight.flightNumber || flight.airline, flight.from && flight.to ? `${flight.from} → ${flight.to}` : ""].filter(Boolean).join(" · ") || "Flight",
+      details: flight.details,
       amount: flight.price,
       currency: flight.currency,
       paidById: flight.paidById,
@@ -90,6 +94,7 @@ export function buildLogisticsExpenses({ accommodations = [], vehicles = [], fli
     })),
     ...otherCosts.map((cost) => asExpense("other", cost, {
       description: cost.title || "Other cost",
+      details: cost.details,
       amount: cost.amount,
       currency: cost.currency,
       paidById: cost.paidById,

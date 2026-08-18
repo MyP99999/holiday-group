@@ -1,5 +1,6 @@
 import { PERSON_COLORS } from "../constants";
 import { normalizeTripDate } from "../utils/tripDates";
+import { chronologicalChatMessages } from "../utils/chatMessages";
 
 export function createId(prefix = "item") {
   const random = typeof crypto !== "undefined" && crypto.randomUUID
@@ -108,7 +109,10 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
     tripStartDate,
     tripEndDate,
     people,
-    expenses: Array.isArray(source.expenses) ? source.expenses : [],
+    expenses: Array.isArray(source.expenses) ? source.expenses.map((expense) => ({
+      ...expense,
+      details: typeof expense.details === "string" ? expense.details : "",
+    })) : [],
     accommodations: Array.isArray(source.accommodations) ? source.accommodations.map((stay) => {
       const rooms = Array.isArray(stay.rooms)
         ? stay.rooms.map((room) => ({ ...room, occupantIds: room.occupantIds || [] }))
@@ -117,6 +121,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
       const legacyRoomTotal = rooms.reduce((sum, room) => sum + (Number(room.cost) || 0), 0);
       return {
         ...stay,
+        details: typeof stay.details === "string" ? stay.details : "",
         price: stay.price ?? legacyRoomTotal,
         paidById: stay.paidById || "",
         splitMode: stay.splitMode === "people" ? "people" : "rooms",
@@ -126,6 +131,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
     }) : [],
     vehicles: Array.isArray(source.vehicles) ? source.vehicles.map((vehicle) => ({
       ...vehicle,
+      details: typeof vehicle.details === "string" ? vehicle.details : "",
       seats: normalizeVehicleSeats(vehicle.seats || 1),
       passengerIds: vehicle.passengerIds || [],
       rentalEnabled: Boolean(vehicle.rentalEnabled),
@@ -136,6 +142,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
     })) : [],
     flights: Array.isArray(source.flights) ? source.flights.map((flight) => ({
       ...flight,
+      details: typeof flight.details === "string" ? flight.details : "",
       airline: flight.airline || "",
       flightNumber: flight.flightNumber || "",
       from: flight.from || "",
@@ -151,6 +158,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
     })) : [],
     otherCosts: Array.isArray(source.otherCosts) ? source.otherCosts.map((cost) => ({
       ...cost,
+      details: typeof cost.details === "string" ? cost.details : "",
       title: cost.title || "Other cost",
       amount: cost.amount ?? "",
       currency: cost.currency || "EUR",
@@ -187,7 +195,7 @@ export function normalizeTripState(raw, fallbackName = "Untitled trip") {
       likedByIds: Array.isArray(idea.likedByIds) ? [...new Set(idea.likedByIds.map(String))] : [],
     })) : [],
     comments: Array.isArray(source.comments) ? source.comments : [],
-    chatMessages: Array.isArray(source.chatMessages) ? source.chatMessages : [],
+    chatMessages: chronologicalChatMessages(Array.isArray(source.chatMessages) ? source.chatMessages : []),
     activityLog: Array.isArray(source.activityLog) ? source.activityLog : [],
     paymentRoutes: source.paymentRoutes && typeof source.paymentRoutes === "object" ? source.paymentRoutes : {},
     settlementPayments: Array.isArray(source.settlementPayments) ? source.settlementPayments : [],

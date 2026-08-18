@@ -930,6 +930,8 @@ input::placeholder, textarea::placeholder { color: #9a9b9b; }
 .other-cost-block > header span { color: var(--sage); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em; }
 .other-cost-block > header h3 { margin: 5px 0 0; font: 400 24px var(--serif); }
 .other-cost-grid { padding: 18px 24px; display: grid; grid-template-columns: minmax(180px, 1.15fr) minmax(210px, .9fr) minmax(150px, .7fr); gap: 14px; align-items: end; background: #fbfaf8; border-bottom: 1px solid var(--line-soft); }
+.expense-cost-grid > div > span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+.expense-cost-grid > div > strong { display: flex; min-height: 40px; align-items: center; font-size: 12px; }
 .allocation-table { padding: 0 24px 8px; overflow-x: auto; }
 .allocation-table-head, .allocation-table-row { min-width: 1040px; display: grid; grid-template-columns: minmax(145px, 1.25fr) repeat(4, minmax(68px, .55fr)) minmax(82px, .65fr) minmax(74px, .6fr) minmax(82px, .65fr) minmax(105px, .85fr) minmax(105px, .8fr); gap: 11px; align-items: center; }
 .allocation-table-head { min-height: 38px; color: var(--muted); font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }

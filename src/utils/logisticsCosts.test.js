@@ -56,4 +56,21 @@ describe("logistics costs", () => {
       expect.objectContaining({ personId: "b", payeeId: "a", due: 100, paid: 100, remaining: 0 }),
     ]);
   });
+
+  test("includes ordinary expenses in the planned cost obligations", () => {
+    const expenses = [{
+      id: "fuel",
+      description: "Fuel",
+      amount: 120,
+      currency: "EUR",
+      paidById: "a",
+      participantIds: ["a", "b", "c"],
+      source: "manual",
+    }];
+
+    expect(logisticsObligations(expenses, [])).toEqual([
+      expect.objectContaining({ logisticsExpenseId: "fuel", title: "Fuel", personId: "b", payeeId: "a", due: 40 }),
+      expect.objectContaining({ logisticsExpenseId: "fuel", title: "Fuel", personId: "c", payeeId: "a", due: 40 }),
+    ]);
+  });
 });

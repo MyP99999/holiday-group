@@ -1274,6 +1274,27 @@ Object.assign(de, {
   expense_route_help: "Jede Zahlung bleibt mit der Person, die die Kosten übernommen hat, und ihrem Grund verknüpft.",
 });
 
+Object.assign(en, {
+  other_costs_help: "Expenses from the Expenses page appear here too. Add any other shared trip cost you need.",
+  planned_split_desc: "All trip costs, payments, remaining amounts and payees in the selected currency.",
+});
+Object.assign(ro, {
+  other_costs_help: "Cheltuielile din pagina Cheltuieli apar \u0219i aici. Adaug\u0103 orice alt cost comun de care ai nevoie.",
+  planned_split_desc: "Toate costurile excursiei, pl\u0103\u021bile, sumele r\u0103mase \u0219i destinatarii \u00een moneda selectat\u0103.",
+});
+Object.assign(es, {
+  other_costs_help: "Los gastos de la p\u00e1gina Gastos tambi\u00e9n aparecen aqu\u00ed. A\u00f1ade cualquier otro gasto compartido que necesites.",
+  planned_split_desc: "Todos los gastos del viaje, pagos, saldos pendientes y destinatarios en la moneda seleccionada.",
+});
+Object.assign(fr, {
+  other_costs_help: "Les d\u00e9penses de la page D\u00e9penses apparaissent aussi ici. Ajoutez tout autre frais partag\u00e9 n\u00e9cessaire.",
+  planned_split_desc: "Tous les frais du voyage, paiements, soldes restants et destinataires dans la devise choisie.",
+});
+Object.assign(de, {
+  other_costs_help: "Ausgaben von der Ausgabenseite erscheinen auch hier. F\u00fcge weitere gemeinsame Reisekosten nach Bedarf hinzu.",
+  planned_split_desc: "Alle Reisekosten, Zahlungen, Restbetr\u00e4ge und Empf\u00e4nger in der ausgew\u00e4hlten W\u00e4hrung.",
+});
+
 const dictionaries = { en, ro, es, fr, de };
 
 export function translate(language, key, variables = {}) {

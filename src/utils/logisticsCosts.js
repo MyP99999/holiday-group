@@ -1,4 +1,4 @@
-import { convert } from "../utils";
+import { convert, getExpenseShares } from "../utils";
 
 export function uniqueIds(ids = []) {
   return [...new Set(ids.filter((id) => id !== null && id !== undefined && id !== "").map(String))];
@@ -111,7 +111,7 @@ export function logisticsObligations(logisticsExpenses, logisticsPayments, outpu
 
   const obligations = [];
   logisticsExpenses.forEach((expense) => {
-    Object.entries(expense.shares || {}).forEach(([personId, amount]) => {
+    getExpenseShares(expense).forEach(({ personId, amount }) => {
       if (String(personId) === String(expense.paidById)) return;
       const due = convert(amount, expense.currency, outputCurrency);
       const key = `${expense.id}:${String(personId)}:${String(expense.paidById)}`;
@@ -134,10 +134,14 @@ export function logisticsObligations(logisticsExpenses, logisticsPayments, outpu
   settlementPayments.forEach((payment) => {
     let available = convert(payment.amountEUR, "EUR", outputCurrency);
     if (available <= 0.005) return;
+    const recordedExpenseId = String(payment.expenseId || payment.logisticsExpenseId || "");
 
     const candidates = obligations
       .filter((obligation) => obligation.personId === String(payment.fromId) && obligation.remaining > 0.005)
-      .sort((left, right) => Number(right.payeeId === String(payment.toId)) - Number(left.payeeId === String(payment.toId)));
+      .sort((left, right) => (
+        Number(right.logisticsExpenseId === recordedExpenseId) - Number(left.logisticsExpenseId === recordedExpenseId)
+        || Number(right.payeeId === String(payment.toId)) - Number(left.payeeId === String(payment.toId))
+      ));
 
     candidates.forEach((obligation) => {
       if (available <= 0.005) return;

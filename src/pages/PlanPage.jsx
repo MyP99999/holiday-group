@@ -7,7 +7,7 @@ import { useApp } from "../context/AppContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
 import { createId, normalizeVehicleSeats } from "../storage/tripState";
-import { convert, fmt } from "../utils";
+import { convert, fmt, getExpenseShares } from "../utils";
 import { appendActivity, changedActivityFields, createActivityEntry } from "../utils/activityLog";
 import { validateTripDates } from "../utils/tripDates";
 import {
@@ -65,8 +65,8 @@ export default function PlanPage() {
     selectedCurrency: outputCurrency, setSelectedCurrency: setOutputCurrency,
   } = useCurrencyRates();
   const {
-    people, tripStartDate, tripEndDate, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights,
-    otherCosts, setOtherCosts, logisticsPayments, setLogisticsPayments, settlementPayments,
+    people, tripStartDate, tripEndDate, expenses, accommodations, setAccommodations, vehicles, setVehicles, flights, setFlights,
+    otherCosts, setOtherCosts, logisticsPayments, setLogisticsPayments, settlementPayments, setSettlementPayments,
     currentMemberId, currentPerson, canManageMembers, updateTripState,
   } = useApp();
   const [showStayForm, setShowStayForm] = useState(false);
@@ -94,10 +94,13 @@ export default function PlanPage() {
     },
   });
 
-  const logisticsExpenses = useMemo(() => buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts }), [accommodations, vehicles, flights, otherCosts]);
+  const tripCostExpenses = useMemo(
+    () => [...expenses, ...buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts })],
+    [expenses, accommodations, vehicles, flights, otherCosts]
+  );
   const obligations = useMemo(
-    () => logisticsObligations(logisticsExpenses, logisticsPayments, outputCurrency, settlementPayments),
-    [logisticsExpenses, logisticsPayments, settlementPayments, outputCurrency, rateDate]
+    () => logisticsObligations(tripCostExpenses, logisticsPayments, outputCurrency, settlementPayments),
+    [tripCostExpenses, logisticsPayments, settlementPayments, outputCurrency, rateDate]
   );
 
   const costSummary = useMemo(() => {
@@ -137,6 +140,13 @@ export default function PlanPage() {
       });
     });
 
+    expenses.forEach((expense) => {
+      otherTotal += convert(Number(expense.amount) || 0, expense.currency, outputCurrency);
+      getExpenseShares(expense).forEach(({ personId, amount }) => {
+        if (rows[String(personId)]) rows[String(personId)].others += convert(amount, expense.currency, outputCurrency);
+      });
+    });
+
     obligations.forEach((obligation) => {
       const row = rows[obligation.personId];
       if (!row) return;
@@ -149,10 +159,10 @@ export default function PlanPage() {
       rows, accommodationTotal, rentalTotal, flightTotal, otherTotal,
       grandTotal: accommodationTotal + rentalTotal + flightTotal + otherTotal,
     };
-  }, [people, accommodations, vehicles, flights, otherCosts, obligations, outputCurrency, rateDate]);
+  }, [people, expenses, accommodations, vehicles, flights, otherCosts, obligations, outputCurrency, rateDate]);
 
   const showFlightAllocation = costSummary.flightTotal > 0.005;
-  const showOtherAllocation = otherCosts.length > 0;
+  const showOtherAllocation = expenses.length > 0 || otherCosts.length > 0;
   const allocationCostColumnCount = 2 + Number(showFlightAllocation) + Number(showOtherAllocation);
   const allocationGridStyle = {
     minWidth: `${760 + allocationCostColumnCount * 70}px`,
@@ -513,13 +523,9 @@ export default function PlanPage() {
     }
     const from = personById(obligation.personId);
     const to = personById(obligation.payeeId);
-    setLogisticsPayments((current) => [...current, {
+    const ordinaryExpense = expenses.find((expense) => String(expense.id) === String(obligation.logisticsExpenseId));
+    const payment = {
       id: createId("logistics-payment"),
-      source: "logistics",
-      logisticsExpenseId: obligation.logisticsExpenseId,
-      logisticsType: obligation.logisticsType,
-      logisticsId: obligation.logisticsId,
-      logisticsTitle: obligation.title,
       fromId: obligation.personId,
       fromName: from?.name || personName(obligation.personId),
       fromColor: from?.color || "",
@@ -527,11 +533,33 @@ export default function PlanPage() {
       toName: to?.name || personName(obligation.payeeId),
       toColor: to?.color || "",
       amountEUR: convert(amount, outputCurrency, "EUR"),
-      originalAmount: amount,
-      originalCurrency: outputCurrency,
-      recordedById: currentMemberId || "",
       paidAt: new Date().toISOString(),
-    }]);
+    };
+    if (ordinaryExpense) {
+      setSettlementPayments((current) => [...current, {
+        ...payment,
+        id: createId("payment"),
+        source: "settlement",
+        expenseId: String(ordinaryExpense.id),
+        expenseSource: ordinaryExpense.source || "expense",
+        reason: ordinaryExpense.description,
+        settlementMethod: "expense",
+        confirmedById: currentMemberId || "",
+        isPartial: amount + 0.01 < obligation.remaining,
+      }]);
+    } else {
+      setLogisticsPayments((current) => [...current, {
+        ...payment,
+        source: "logistics",
+        logisticsExpenseId: obligation.logisticsExpenseId,
+        logisticsType: obligation.logisticsType,
+        logisticsId: obligation.logisticsId,
+        logisticsTitle: obligation.title,
+        originalAmount: amount,
+        originalCurrency: outputCurrency,
+        recordedById: currentMemberId || "",
+      }]);
+    }
     setPaymentDraft(null);
     setPaymentError("");
   };
@@ -809,6 +837,21 @@ export default function PlanPage() {
               </div>
             )}
 
+            {expenses.map((expense) => {
+              const expenseShares = getExpenseShares(expense);
+              return (
+                <article className="other-cost-block expense-cost-block" key={`expense:${expense.id}`}>
+                  <header><div><span>{t("expenses")}</span><h3>{expense.description}</h3></div><button className="row-action" onClick={() => navigate("../expenses")}>{t("edit")}</button></header>
+                  <div className="other-cost-grid expense-cost-grid">
+                    <div><span>{t("amount")}</span><strong>{fmt(expense.amount, expense.currency)}</strong></div>
+                    <div><span>{t("payer")}</span><strong>{personName(expense.paidById)}</strong></div>
+                    <div><span>{t("shared_with")}</span><strong>{expenseShares.length}</strong></div>
+                  </div>
+                  <div className="split-preview"><strong>{t("other_split")}</strong><div>{expenseShares.length ? expenseShares.map(({ personId, amount }) => <span key={personId}><b>{personName(personId)}</b>{fmt(amount, expense.currency)}</span>) : <small>{t("select_participants_first")}</small>}</div></div>
+                </article>
+              );
+            })}
+
             {otherCosts.length ? otherCosts.map((cost) => {
               const costShares = getOtherCostShares(cost);
               return (
@@ -830,7 +873,7 @@ export default function PlanPage() {
                   <CommentThread targetType="other" targetId={cost.id} />
                 </article>
               );
-            }) : !showOtherForm && <div className="open-empty"><strong>{t("no_other_costs")}</strong><span>{t("no_other_costs_desc")}</span></div>}
+            }) : !showOtherForm && !expenses.length && <div className="open-empty"><strong>{t("no_other_costs")}</strong><span>{t("no_other_costs_desc")}</span></div>}
           </section>
 
           <p className="auto-save-note">{t("logistics_saved")}</p>

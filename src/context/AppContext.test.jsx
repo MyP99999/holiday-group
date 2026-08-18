@@ -20,6 +20,11 @@ function RefreshProbe() {
   );
 }
 
+function FinancialProbe() {
+  const { logisticsPayments } = useApp();
+  return <span data-testid="logistics-payment-count">{logisticsPayments.length}</span>;
+}
+
 function deferred() {
   let resolve;
   const promise = new Promise((next) => { resolve = next; });
@@ -109,5 +114,63 @@ describe("manual trip refresh", () => {
 
     expect(container.querySelector('[data-testid="trip-name"]').textContent).toBe("Local edit");
     expect(container.querySelector('[data-testid="refreshing"]').textContent).toBe("false");
+  });
+});
+
+describe("trip financial reconciliation", () => {
+  let container;
+  let root;
+
+  beforeAll(() => {
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  });
+
+  afterAll(() => {
+    delete globalThis.IS_REACT_ACT_ENVIRONMENT;
+  });
+
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(() => {
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  test("does not load a logistics payment addressed to a former payer", async () => {
+    const driver = {
+      isAsync: true,
+      read: jest.fn().mockResolvedValue({
+        people: [{ id: "geo" }, { id: "stefan" }, { id: "alina" }],
+        expenses: [],
+        vehicles: [{
+          id: "van",
+          rentalEnabled: true,
+          rentalPrice: 150,
+          rentalCurrency: "EUR",
+          rentalPaidById: "stefan",
+          rentalParticipantIds: ["geo", "stefan", "alina"],
+        }],
+        logisticsPayments: [{
+          id: "stale",
+          logisticsExpenseId: "logistics:rental:van",
+          fromId: "alina",
+          toId: "geo",
+          amountEUR: 50,
+        }],
+      }),
+      write: jest.fn(),
+      subscribe: jest.fn(() => () => {}),
+    };
+
+    await act(async () => {
+      root.render(<AppProvider driver={driver}><FinancialProbe /></AppProvider>);
+    });
+    await flushEffects();
+
+    expect(container.querySelector('[data-testid="logistics-payment-count"]').textContent).toBe("0");
   });
 });

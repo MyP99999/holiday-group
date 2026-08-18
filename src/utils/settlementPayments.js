@@ -250,6 +250,8 @@ export function reconcileSettlementPayments(
     if (payment.settlementMethod === "expense" && paymentExpenseId(payment)) {
       const expenseId = paymentExpenseId(payment);
       const expense = (expenses || []).find((item) => String(item.id) === expenseId);
+      const payeeId = String(expense?.paidById || "");
+      if (!expense || String(payment.toId) !== payeeId || String(payment.fromId) === payeeId) return;
       const share = expense && getExpenseShares(expense).find((item) => String(item.personId) === String(payment.fromId));
       const shareEUR = convert(share?.amount || 0, expense?.currency, "EUR");
       const previousPayments = [...fixedPayments, ...accepted];
@@ -274,6 +276,39 @@ export function reconcileSettlementPayments(
     const acceptedAmount = Math.min(originalAmount, matchingTransaction?.amountEUR || 0);
     if (acceptedAmount <= PAYMENT_EPSILON) return;
 
+    accepted.push({
+      ...payment,
+      amountEUR: acceptedAmount,
+      isPartial: Boolean(payment.isPartial || acceptedAmount + 0.01 < originalAmount),
+    });
+  });
+
+  return accepted;
+}
+
+export function reconcileLogisticsPayments(logisticsExpenses = [], logisticsPayments = []) {
+  const expensesById = new Map(logisticsExpenses.map((expense) => [String(expense.id), expense]));
+  const paidByObligation = new Map();
+  const accepted = [];
+
+  logisticsPayments.forEach((payment) => {
+    const expenseId = paymentExpenseId(payment);
+    const expense = expensesById.get(expenseId);
+    const fromId = String(payment.fromId || "");
+    const toId = String(payment.toId || "");
+    const payeeId = String(expense?.paidById || "");
+    const originalAmount = Number(payment.amountEUR) || 0;
+
+    if (!expense || !fromId || toId !== payeeId || fromId === payeeId || originalAmount <= PAYMENT_EPSILON) return;
+
+    const share = getExpenseShares(expense).find((item) => String(item.personId) === fromId);
+    const shareEUR = convert(share?.amount || 0, expense.currency, "EUR");
+    const obligationKey = `${expenseId}:${fromId}:${payeeId}`;
+    const alreadyPaidEUR = paidByObligation.get(obligationKey) || 0;
+    const acceptedAmount = Math.min(originalAmount, Math.max(0, shareEUR - alreadyPaidEUR));
+    if (acceptedAmount <= PAYMENT_EPSILON) return;
+
+    paidByObligation.set(obligationKey, alreadyPaidEUR + acceptedAmount);
     accepted.push({
       ...payment,
       amountEUR: acceptedAmount,

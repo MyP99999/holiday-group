@@ -5,6 +5,7 @@ import {
   getSettlementPaymentReasons,
   normalizeSettlementPaymentReason,
   reconcileSettlementPayments,
+  reconcileLogisticsPayments,
   resolveSettlementPaymentAmountEUR,
   toLocalDateTimeInput,
 } from "./settlementPayments";
@@ -151,6 +152,51 @@ describe("settlement payment confirmation", () => {
 
     expect(reconcileSettlementPayments(people, remainingExpense, payments)).toEqual([
       expect.objectContaining({ id: "paid", amountEUR: 50, isPartial: true }),
+    ]);
+  });
+
+  test("removes a detailed payment when the expense payer changes", () => {
+    const expense = {
+      id: "rental",
+      amount: 150,
+      currency: "EUR",
+      paidById: "new-payee",
+      participantIds: ["payer", "new-payee"],
+    };
+    const payment = {
+      id: "stale",
+      fromId: "payer",
+      toId: "old-payee",
+      expenseId: "rental",
+      settlementMethod: "expense",
+      amountEUR: 75,
+    };
+
+    expect(reconcileSettlementPayments(
+      [{ id: "payer" }, { id: "old-payee" }, { id: "new-payee" }],
+      [expense],
+      [payment]
+    )).toEqual([]);
+  });
+
+  test("removes logistics payments to a former payer and caps valid payments", () => {
+    const expense = {
+      id: "logistics:rental:van",
+      amount: 150,
+      currency: "EUR",
+      paidById: "stefan",
+      participantIds: ["geo", "stefan"],
+      source: "logistics",
+    };
+    const payments = [
+      { id: "stale", logisticsExpenseId: expense.id, fromId: "alina", toId: "geo", amountEUR: 75 },
+      { id: "valid", logisticsExpenseId: expense.id, fromId: "geo", toId: "stefan", amountEUR: 50 },
+      { id: "excess", logisticsExpenseId: expense.id, fromId: "geo", toId: "stefan", amountEUR: 50 },
+    ];
+
+    expect(reconcileLogisticsPayments([expense], payments)).toEqual([
+      expect.objectContaining({ id: "valid", amountEUR: 50 }),
+      expect.objectContaining({ id: "excess", amountEUR: 25, isPartial: true }),
     ]);
   });
 

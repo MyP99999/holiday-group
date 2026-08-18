@@ -10,7 +10,7 @@ import { calculateBalances, convert, fmt } from "../utils";
 import { createId, nextPersonColor } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
-import { buildLogisticsExpenses } from "../utils/logisticsCosts";
+import { getTripExpenses, getTripPayments } from "../utils/tripFinancials";
 import { formatTripDate, formatTripDateRange } from "../utils/tripDates";
 
 export default function PeoplePage() {
@@ -25,9 +25,14 @@ export default function PeoplePage() {
     settlementPayments, logisticsPayments, currentMemberId, canManageMembers,
   } = useApp();
   const [name, setName] = useState("");
-  const logisticsExpenses = useMemo(() => buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts }), [accommodations, vehicles, flights, otherCosts]);
-  const allExpenses = useMemo(() => [...expenses, ...logisticsExpenses], [expenses, logisticsExpenses]);
-  const allPayments = useMemo(() => [...settlementPayments, ...logisticsPayments], [settlementPayments, logisticsPayments]);
+  const allExpenses = useMemo(
+    () => getTripExpenses({ expenses, accommodations, vehicles, flights, otherCosts }),
+    [expenses, accommodations, vehicles, flights, otherCosts]
+  );
+  const allPayments = useMemo(
+    () => getTripPayments({ settlementPayments, logisticsPayments }),
+    [settlementPayments, logisticsPayments]
+  );
   const balances = useMemo(() => calculateBalances(people, allExpenses, allPayments), [people, allExpenses, allPayments, rateDate]);
   const totalSpent = useMemo(
     () => allExpenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),

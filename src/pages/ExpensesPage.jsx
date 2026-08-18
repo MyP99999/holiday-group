@@ -13,6 +13,7 @@ import { useCurrencyRates } from "../context/CurrencyRatesContext";
 import { removeExpenseFromTripState, updateExpenseInTripState } from "../utils/expenseDeletion";
 import { expenseToForm, validateExpenseForm } from "../utils/expenseForm";
 import { appendActivity, changedActivityFields, createActivityEntry } from "../utils/activityLog";
+import { getTripExpenses } from "../utils/tripFinancials";
 
 const emptyForm = {
   description: "",
@@ -33,7 +34,10 @@ export default function ExpensesPage() {
     selectedCurrency: displayCurrency, setSelectedCurrency: setDisplayCurrency,
   } = useCurrencyRates();
   const formRef = useRef(null);
-  const { people, expenses, setExpenses, updateTripState, currentPerson } = useApp();
+  const {
+    people, expenses, accommodations, vehicles, flights, otherCosts,
+    setExpenses, updateTripState, currentPerson,
+  } = useApp();
   const [form, setForm] = useState(() => ({ ...emptyForm, currency: displayCurrency }));
   const [error, setError] = useState("");
   const [expenseToEdit, setExpenseToEdit] = useState(null);
@@ -44,9 +48,17 @@ export default function ExpensesPage() {
     const requestedMode = location.state?.expenseMode;
     return requestedMode === "scan" || requestedMode === "restaurant" ? requestedMode : "manual";
   });
+  const allExpenses = useMemo(
+    () => getTripExpenses({ expenses, accommodations, vehicles, flights, otherCosts }),
+    [expenses, accommodations, vehicles, flights, otherCosts]
+  );
   const totalSpent = useMemo(
-    () => expenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
-    [expenses, displayCurrency, rateDate]
+    () => allExpenses.reduce((sum, expense) => sum + convert(expense.amount, expense.currency, displayCurrency), 0),
+    [allExpenses, displayCurrency, rateDate]
+  );
+  const orderedExpenses = useMemo(
+    () => [...allExpenses].sort((left, right) => new Date(right.date || 0) - new Date(left.date || 0)),
+    [allExpenses]
   );
 
   useEffect(() => {
@@ -119,7 +131,9 @@ export default function ExpensesPage() {
 
   const personName = (id) => people.find((person) => String(person.id) === String(id))?.name || "Unknown";
   const expenseSourceLabel = (expense) => (
-    expense.source === "scan"
+    expense.source === "logistics"
+      ? t("trip_logistics")
+      : expense.source === "scan"
       ? t("scanned_receipt")
       : expense.source === "restaurant"
         ? t("restaurant_split")
@@ -204,10 +218,10 @@ export default function ExpensesPage() {
       <div className={`expense-workspace${expenseMode !== "manual" ? " expense-workspace-expanded" : ""}`}>
         <section className="surface-panel expense-list-panel">
           <div className="panel-heading"><div><h2>{t("recent_expenses")}</h2></div></div>
-          {expenses.length ? (
+          {allExpenses.length ? (
             <div className="expense-table" role="table">
               <div className="expense-table-head" role="row"><span>{t("description")}</span><span>{t("paid_by")}</span><span>{t("split_label")}</span><span>{t("date")}</span><span>{t("amount")}</span><span /></div>
-              {[...expenses].reverse().map((expense) => {
+              {orderedExpenses.map((expense) => {
                 const payerIndex = people.findIndex((person) => String(person.id) === String(expense.paidById));
                 const payer = people[payerIndex];
                 const converted = convert(expense.amount, expense.currency, displayCurrency);
@@ -220,8 +234,14 @@ export default function ExpensesPage() {
                     <span>{expense.date ? new Date(expense.date).toLocaleDateString(locale, { day: "2-digit", month: "short" }) : "—"}</span>
                     <span className="amount-cell"><strong>{fmt(expense.amount, expense.currency)}</strong>{expense.currency !== displayCurrency && <small>{fmt(converted, displayCurrency)}</small>}</span>
                     <span className="expense-row-actions">
-                      <button className="row-action" onClick={() => openExpenseEditor(expense)}>{t("edit")}</button>
-                      <button className="row-action" onClick={() => setExpenseToDelete(expense)}>{t("remove")}</button>
+                      {expense.source === "logistics" ? (
+                        <button className="row-action" onClick={() => navigate("../plan")}>{t("plan")}</button>
+                      ) : (
+                        <>
+                          <button className="row-action" onClick={() => openExpenseEditor(expense)}>{t("edit")}</button>
+                          <button className="row-action" onClick={() => setExpenseToDelete(expense)}>{t("remove")}</button>
+                        </>
+                      )}
                     </span>
                   </div>
                 );

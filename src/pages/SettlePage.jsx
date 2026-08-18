@@ -8,9 +8,9 @@ import { calculateSettlements, convert, fmt } from "../utils";
 import { createId } from "../storage/tripState";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrencyRates } from "../context/CurrencyRatesContext";
-import { buildLogisticsExpenses } from "../utils/logisticsCosts";
 import { isMemberClaimed } from "../utils/memberClaims";
 import { appendActivity, createActivityEntry } from "../utils/activityLog";
+import { getTripExpenses, getTripPayments, removePaymentFromTripState } from "../utils/tripFinancials";
 import {
   calculateExpenseSettlements,
   canConfirmSettlementPayment,
@@ -49,12 +49,14 @@ export default function SettlePage() {
   const [memberModeration, setMemberModeration] = useState(null);
   const [memberModerationError, setMemberModerationError] = useState("");
   const [memberModerationBusy, setMemberModerationBusy] = useState(false);
-  const logisticsExpenses = useMemo(
-    () => buildLogisticsExpenses({ accommodations, vehicles, flights, otherCosts }),
-    [accommodations, vehicles, flights, otherCosts]
+  const allExpenses = useMemo(
+    () => getTripExpenses({ expenses, accommodations, vehicles, flights, otherCosts }),
+    [expenses, accommodations, vehicles, flights, otherCosts]
   );
-  const allExpenses = useMemo(() => [...expenses, ...logisticsExpenses], [expenses, logisticsExpenses]);
-  const allPayments = useMemo(() => [...settlementPayments, ...logisticsPayments], [settlementPayments, logisticsPayments]);
+  const allPayments = useMemo(
+    () => getTripPayments({ settlementPayments, logisticsPayments }),
+    [settlementPayments, logisticsPayments]
+  );
   const { balances, transactions } = useMemo(
     () => calculateSettlements(people, allExpenses, allPayments),
     [people, allExpenses, allPayments, rateDate]
@@ -254,11 +256,10 @@ export default function SettlePage() {
 
   const deleteHistoryPayment = () => {
     if (!canManageMembers || !paymentToDelete) return;
-    const paymentField = paymentToDelete.source === "logistics" ? "logisticsPayments" : "settlementPayments";
-    updateTripState((current) => appendActivity({
-      ...current,
-      [paymentField]: current[paymentField].filter((payment) => String(payment.id) !== String(paymentToDelete.id)),
-    }, createActivityEntry({
+    updateTripState((current) => appendActivity(removePaymentFromTripState(
+      current,
+      paymentToDelete.id
+    ), createActivityEntry({
       type: "payment_deleted",
       actor: currentPerson,
       subject: { id: paymentToDelete.id, name: `${paymentToDelete.fromName} → ${paymentToDelete.toName}` },

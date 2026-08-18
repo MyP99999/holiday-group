@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { normalizeTripState } from "../storage/tripState";
 import { appendActivity, createActivityEntry } from "../utils/activityLog";
+import { reconcileTripFinancials } from "../utils/tripFinancials";
 
 export const AppContext = createContext(null);
 
@@ -8,9 +9,13 @@ export function useApp() {
   return useContext(AppContext);
 }
 
+function prepareTripState(raw) {
+  return reconcileTripFinancials(normalizeTripState(raw));
+}
+
 export function AppProvider({ driver, currentMemberId = "", ownerMode = false, children }) {
   const [state, setState] = useState(() => (
-    driver.isAsync ? null : normalizeTripState(driver.read())
+    driver.isAsync ? null : prepareTripState(driver.read())
   ));
   const stateRef = useRef(state);
   const [loadError, setLoadError] = useState("");
@@ -28,7 +33,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
     const start = async () => {
       setLoadError("");
       try {
-        const nextState = normalizeTripState(await driver.read());
+        const nextState = prepareTripState(await driver.read());
         if (!active) return;
         stateRef.current = nextState;
         setState(nextState);
@@ -36,7 +41,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
         if (!driver.isAsync) driver.write(nextState);
         unsubscribe = driver.subscribe((remoteState) => {
           if (active) {
-            const normalized = normalizeTripState(remoteState);
+            const normalized = prepareTripState(remoteState);
             stateRef.current = normalized;
             setState(normalized);
           }
@@ -72,7 +77,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
     const previous = stateRef.current;
     if (!previous) return;
     const value = typeof updater === "function" ? updater(previous[field]) : updater;
-    const next = { ...previous, [field]: value };
+    const next = reconcileTripFinancials({ ...previous, [field]: value });
     localRevisionRef.current += 1;
     stateRef.current = next;
     setState(next);
@@ -82,8 +87,9 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
   const updateTripState = (updater) => {
     const previous = stateRef.current;
     if (!previous || typeof updater !== "function") return;
-    const next = updater(previous);
-    if (!next || next === previous) return;
+    const updated = updater(previous);
+    if (!updated || updated === previous) return;
+    const next = reconcileTripFinancials(updated);
     localRevisionRef.current += 1;
     stateRef.current = next;
     setState(next);
@@ -99,7 +105,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
     const revisionAtStart = localRevisionRef.current;
 
     try {
-      const refreshed = normalizeTripState(await driver.read());
+      const refreshed = prepareTripState(await driver.read());
 
       // Do not replace an edit made while the server request was running.
       if (localRevisionRef.current !== revisionAtStart) return true;
@@ -186,7 +192,7 @@ export function AppProvider({ driver, currentMemberId = "", ownerMode = false, c
     setPendingWrites((count) => count + 1);
     try {
       await driver.moderateMember(memberId, action);
-      const refreshed = normalizeTripState(await driver.read());
+      const refreshed = prepareTripState(await driver.read());
       const nextState = appendActivity(refreshed, createActivityEntry({
         type: action === "kick" ? "member_kicked" : action === "ban" ? "member_banned" : "member_unbanned",
         actor: currentPerson,
